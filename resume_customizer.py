@@ -1,15 +1,15 @@
 # resume_customizer.py
-from openai import OpenAI
+# from openai import OpenAI
 import os, json
 from docx import Document
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import re
 from docx.oxml import OxmlElement
-
+from LLMClients.clients import Model
 # ---------- CONFIG ----------
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-MODEL = "gpt-5-mini"   # or "gpt-5-mini"
+# load_dotenv()
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# MODEL = "gpt-5-mini"   # or "gpt-5-mini"
 
 # ---------- STYLE MAPPING ----------
 # These names must match the style names in your Word template!
@@ -34,7 +34,7 @@ SECTION_RULES = {
     - Category name has to be wrapped with "**" but do not wrap any specific skills in ** ... **.
     """,
     "HOOPP_EXPERIENCE": """
-    - Rewrite into no more than 5 bullet points and no more than 150 words total.
+    - Rewrite into no more than 6 bullet points and no more than 170 words total.
     - You can delete irrelevant items and update or expand existing items.
     - Ensure the bullets remain coherent with a co-op/internship context, not senior-level responsibilities.
     - Highlight required skills from the job description, but naturally (not forced).
@@ -101,11 +101,8 @@ def improve_resume_json(section_texts: dict, job_description: str, additional_in
     "JOBPILOT": "..."
     }}
     """
-    resp = client.chat.completions.create(
-        model=MODEL,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    text = resp.choices[0].message.content.strip()
+    llm = Model("OPENAI", prompt)
+    text = llm.get_response_from_client()
     try:
         return json.loads(text)
     except json.JSONDecodeError:

@@ -149,9 +149,6 @@ def create_application_folder(
     except Exception as e:
         print(f"⚠️ Failed to clear source job files: {e}")
 
-
-
-
 if __name__ == "__main__":
     if len(sys.argv) < 4:
         print("Usage: python script.py <CompanyName> <PositionName> <Type>")

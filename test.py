@@ -84,7 +84,7 @@ def create_application_folder(company_name, position_name, position_type, resume
 
     # Define filenames
     resume_filename = f"Roger Xu_{company_name}_Resume_Template.docx"
-    cover_filename = f"Roger Xu_{company_name}_CoverLetter.docx"
+    cover_filename = f"Roger Xu_{company_name}_CoverLetter_Template.docx"
     jd_filename = "job_description.txt"
 
     resume_target = os.path.join(position_folder, resume_filename)
@@ -175,6 +175,15 @@ def create_application_folder(company_name, position_name, position_type, resume
             print("🧹 Cleared source additional_info.txt content")
     except Exception as e:
         print(f"⚠️ Failed to clear source job description/additional_info: {e}")
+
+    # --- NEW: record cover letter absolute path ---
+    try:
+        record_cover_path = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/cover_letter_path.txt"
+        with open(record_cover_path, "w") as f:
+            f.write(cover_target)
+        print(f"📝 Recorded cover letter path: {cover_target} → {record_cover_path}")
+    except Exception as e:
+        print(f"⚠️ Failed to write cover letter path: {e}")
 
 
 if __name__ == "__main__":
