@@ -1,16 +1,23 @@
 # resume_customizer.py
-# from openai import OpenAI
+from openai import OpenAI
 import os, json
 from docx import Document
+import pinecone
+from dotenv import load_dotenv
 # from dotenv import load_dotenv
 import re
 from docx.oxml import OxmlElement
 from LLMClients.clients import Model
 from job_description_cleaner.jd_cleaning import clean_job_description
 # ---------- CONFIG ----------
-# load_dotenv()
+load_dotenv()
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # MODEL = "gpt-5-mini"   # or "gpt-5-mini"
+
+# initialize once globally
+pc = pinecone.Pinecone(api_key=os.environ["PINECONE_API_KEY"])
+index = pc.Index("roger-resume")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # ---------- STYLE MAPPING ----------
 # These names must match the style names in your Word template!
@@ -31,12 +38,10 @@ SECTION_RULES = {
     """,
     "SKILLS": """
     - Present as a **category:** skill1, skill2 format, and no more than 5 categories.
-    - Delete irrelevant skills.
     - Category name has to be wrapped with "**" but do not wrap any specific skills in ** ... **.
     """,
     "HOOPP_EXPERIENCE": """
-    - Rewrite into no more than 6 bullet points and no more than 170 words total.
-    - You can delete irrelevant items and update or expand existing items.
+    - No more than 6 bullet points and no more than 170 words total.
     - Ensure the bullets remain coherent with a co-op/internship context, not senior-level responsibilities.
     - Highlight required skills from the job description, but naturally (not forced).
     - If possible, cover at least 90 percent of important required skills not already covered by the JobPilot or Portfolio Tracker sections.
@@ -52,23 +57,28 @@ SECTION_RULES = {
 }
 
 # ---------- LLM HELPER ----------
-def improve_resume_json(section_texts: dict, job_description: str, additional_info: str = None) -> dict:
+def improve_resume_json(job_description: str, additional_info: str = None, user_id: str = "roger") -> dict:
     """Ask LLM to improve all resume sections in one JSON response."""
-    # Build the big prompt
-    sections_str = "\n\n".join(
-        f"{name}:\n{content}" for name, content in section_texts.items()
-    )
+    # Retrieve background info from Pinecone
+    retrieved_context = retrieve_context_from_pinecone(job_description, user_id)
+
     rules_str = "\n".join(
         f"- {name}: {rule.strip()}" for name, rule in SECTION_RULES.items()
     )
 
     prompt = f"""
     You are a professional resume writer.
-    You will receive a job description and multiple resume sections.
-    Your task is to improve each section according to the general rules and its unique rules.
+    Use the following reference materials from the candidate's different resumes and other related information
+    to inform your writing and make the content more relevant:
+
+    === Candidate Background (from Pinecone) ===
+    {retrieved_context if retrieved_context else "No previous resume context available."}
+    === End of Background ===
+
+    Now, improve the resume sections according to the rules below.
+
 
     General Rules (apply to all sections):
-    - Keep most of the existing content and reframe if needed. Can delete irrelevant items.
     - Emphasize alignment with the job description by highlighting overlapping skills and responsibilities.
     - Wrap important keywords (skills, technologies, frameworks, certifications, job-critical terms) with ** ... ** so they can be processed later.
     - You may integrate 2–4 additional skills from the job description that are not currently in the resume, but only if they fit naturally into the context of the section.
@@ -86,9 +96,6 @@ def improve_resume_json(section_texts: dict, job_description: str, additional_in
 
     Job Description:
     {job_description}
-
-    Sections:
-    {sections_str}
 
     Additional Requirement (if any):
     {additional_info if additional_info else 'None'}
@@ -110,6 +117,29 @@ def improve_resume_json(section_texts: dict, job_description: str, additional_in
         print("⚠️ Model did not return valid JSON, raw output saved for debugging")
         return {}
 
+# ---------- RAG HELPER ----------
+def retrieve_context_from_pinecone(query: str, user_id: str, top_k: int = 5) -> str:
+    """Retrieve top resume chunks related to the job description."""
+    # 1. Embed the query
+    emb = client.embeddings.create(
+        model="text-embedding-3-large",
+        input=query
+    )
+    vector = emb.data[0].embedding
+
+    # 2. Query Pinecone
+    results = index.query(
+        namespace=user_id,
+        vector=vector,
+        top_k=top_k,
+        include_metadata=True
+    )
+
+    # 3. Combine retrieved texts
+    context = "\n---\n".join([match.metadata["text"] for match in results.matches])
+    print(f"--- Retrieved Context ---\n{context}\n")
+    return context
+
 # ---------- MAIN PIPELINE ----------
 def add_text_with_bold(para, text):
     """
@@ -129,27 +159,18 @@ def insert_paragraph_after(paragraph, style=None):
     paragraph._element.addnext(new_para._element)  # insert directly after
     return new_para
 
-def customize_resume_with_placeholders(template_path: str, section_files: dict, job_description: str, output_path: str, additional_info: str = None):
+def customize_resume_with_placeholders(template_path: str, job_description: str, output_path: str, additional_info: str = None):
     """
     Replace placeholders in resume template with LLM-customized content.
     section_files = {"SUMMARY": "path/to/summary.txt", ...}
     """
     doc = Document(template_path)
 
-    # Load all base texts
-    section_texts = {}
-    for placeholder, file_path in section_files.items():
-        if os.path.exists(file_path):
-            with open(file_path, "r") as f:
-                section_texts[placeholder] = f.read()
-        else:
-            print(f"⚠️ Section file not found: {file_path}")
-
     # Clean job description
     cleaned_job_description = clean_job_description(job_description)
 
     # Get improved sections from LLM
-    improved_sections = improve_resume_json(section_texts, cleaned_job_description, additional_info)
+    improved_sections = improve_resume_json(cleaned_job_description, additional_info)
     # print the text of each section for debugging
     for section, text in improved_sections.items():
         print(f"--- {section} ---\n{text}\n")   

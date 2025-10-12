@@ -121,15 +121,15 @@ def create_application_folder(company_name, position_name, position_type, resume
 
     # Step 3: Customize resume
     # position type folder name such as Frontend_Sections or Frontend_Sections
-    position_type_folder_name = position_type.capitalize() + "_Sections"
+    # position_type_folder_name = position_type.capitalize() + "_Sections"
     if job_description:
-        section_files = {
-            "SUMMARY": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/summary.txt",
-            "HOOPP_EXPERIENCE": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/hoopp_experience.txt",
-            "PORTFOLIO_TRACKER": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/portfolio_tracker.txt",
-            "SKILLS": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/skills.txt",
-            "JOBPILOT": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/jobpilot.txt",
-        }
+        # section_files = {
+        #     "SUMMARY": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/summary.txt",
+        #     "HOOPP_EXPERIENCE": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/hoopp_experience.txt",
+        #     "PORTFOLIO_TRACKER": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/portfolio_tracker.txt",
+        #     "SKILLS": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/skills.txt",
+        #     "JOBPILOT": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/jobpilot.txt",
+        # }
 
         customized_resume_path = os.path.join(
             position_folder,
@@ -137,7 +137,7 @@ def create_application_folder(company_name, position_name, position_type, resume
         )
         customize_resume_with_placeholders(
             resume_path,
-            section_files,
+            # section_files,
             job_description,
             customized_resume_path,
             additional_info
@@ -185,7 +185,7 @@ def create_application_folder(company_name, position_name, position_type, resume
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 4:
         print("Usage: python script.py <CompanyName> <PositionName> <Type>")
         sys.exit(1)
 
