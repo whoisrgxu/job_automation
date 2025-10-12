@@ -6,6 +6,7 @@ from docx import Document
 import re
 from docx.oxml import OxmlElement
 from LLMClients.clients import Model
+from job_description_cleaner.jd_cleaning import clean_job_description
 # ---------- CONFIG ----------
 # load_dotenv()
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -144,8 +145,11 @@ def customize_resume_with_placeholders(template_path: str, section_files: dict, 
         else:
             print(f"⚠️ Section file not found: {file_path}")
 
+    # Clean job description
+    cleaned_job_description = clean_job_description(job_description)
+
     # Get improved sections from LLM
-    improved_sections = improve_resume_json(section_texts, job_description, additional_info)
+    improved_sections = improve_resume_json(section_texts, cleaned_job_description, additional_info)
     # print the text of each section for debugging
     for section, text in improved_sections.items():
         print(f"--- {section} ---\n{text}\n")   

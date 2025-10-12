@@ -1,0 +1,7 @@
+# LinkedIn credentials (optional)
+LINKEDIN_EMAIL=your_email@example.com
+LINKIN_PASSWORD=your_password
+
+# Proxy configuration (optional)
+# Add your proxy servers here
+PROXY_LIST=http://proxy1:port,http://proxy2:port

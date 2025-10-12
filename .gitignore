@@ -1,3 +1,7 @@
 /.env
 /venv/
 /__pycache__/
+# all the .env files and __pychache__ folders and venv folders in any folder of this project
+*/.env
+*/__pycache__/
+*/venv/

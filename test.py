@@ -5,7 +5,9 @@ from docx import Document
 from datetime import datetime
 from resume_customizer import customize_resume_with_placeholders
 from openpyxl import load_workbook, Workbook
+import subprocess
 
+excel_log_path = "/Users/Roger/Documents/FullTime-Resume/Job Tracker.xlsx"
 
 def already_applied(excel_path, sheet_name, company_name, position_name):
     """Check if a company/position already exists in the tracker."""
@@ -61,8 +63,6 @@ def replace_placeholders_in_docx(input_path, output_path, replacements: dict):
 
 
 def create_application_folder(company_name, position_name, position_type, resume_path, coverLetter_path, jd_source_path=None):
-
-    excel_log_path = "/Users/Roger/Documents/FullTime-Resume/Job Tracker.xlsx"
 
     # Check if already applied
     if already_applied(excel_log_path, "Job Tracker", company_name, position_name):
@@ -150,8 +150,6 @@ def create_application_folder(company_name, position_name, position_type, resume
     print(f"✅ Application folder created: {position_folder}")
     print(f"📄 Files created:\n- {resume_target}\n- {cover_target}\n- {jd_target}")
 
-    # Log to Excel
-    excel_log_path = "/Users/Roger/Documents/FullTime-Resume/Job Tracker.xlsx"
     log_application_to_excel(
         excel_log_path,
         sheet_name="Job Tracker",
@@ -187,7 +185,7 @@ def create_application_folder(company_name, position_name, position_type, resume
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 5:
         print("Usage: python script.py <CompanyName> <PositionName> <Type>")
         sys.exit(1)
 
@@ -204,6 +202,12 @@ if __name__ == "__main__":
     company = sys.argv[1].strip()
     position = sys.argv[2].strip()
     position_type = sys.argv[3]
+    
+    # easy_apply default is true
+    if len(sys.argv) < 5:
+        easy_apply = "true"
+    else:
+        easy_apply = sys.argv[4].strip().lower()
 
     if position_type == "default":
         resume = resume_default
@@ -218,3 +222,14 @@ if __name__ == "__main__":
         sys.exit(1)
 
     create_application_folder(company, position, position_type, resume, coverLetter, jd_source_path)
+
+    # If not easy apply, run coverletter customizer
+    if easy_apply == "false" and not already_applied(excel_log_path, "Job Tracker", company, position):
+        print("🔄 Running coverletter customizer...")
+        import subprocess
+        coverletter_script = "/Users/Roger/Documents/PersonalProject/Job Automation/coverletter_customizer.py"
+        try:
+            subprocess.run(f"python3 \"{coverletter_script}\"", shell=True, check=True)
+            print("✅ Cover letter customized successfully")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Failed to customize cover letter: {e}")

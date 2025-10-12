@@ -1,0 +1,51 @@
+ROGER XU
+
+Summary	  
+A dedicated and results-driven software engineer with extensive hands-on experience in full-stack development using TypeScript, React, NodeJS, MongoDB / PostgreSQL and cloud platforms (AWS, Azure). Passionate about building high-quality, efficient software solutions and solving complex problems in dynamic environments, with a proven track record of delivering and optimizing projects end to end.
+
+Skills	  
+Frontend: JavaScript / TypeScript, React, Next.js, HTML, CSS, Tailwind CSS, Material UI, Shadcn, SharePoint, SPFx
+Backend & Databases: Node.js, Express, REST APIs, Python, FastAPI, Java, Spring Boot, C++, Go, SQL & NoSQL, PostgreSQL, MongoDB
+DevOps & Testing: Linux, Bash, PowerShell, Git / GitHub, Containerization (Docker), CI/CD (GitHub Actions, Azure DevOps), AWS & Azure Cloud, Jest, React Testing Library, Playwright, Power Automate, Power Apps, PowerBI
+AI Integration: Google Cloud APIs, Gemini APIs, OpenAI APIs
+Development Practice: Agile / Scrum, SDLC
+
+Experience	
+Software Engineer | Systems Developer (Co-op)	Sep 2024 – Apr 2025
+Healthcare of Ontario Pension Plan	Toronto, ON
+Implemented a customizable question feature with React, TypeScript, and Node.js, boosting user engagement by 20% across 1,000+ employees.
+Rebuilt a core UI with React, Tailwind, and Material UI, cutting load time by 35% (2.3s → 1.5s) and improving mobile LightHouse score.
+Developed backend features with Node.js/TypeScript on AWS using Lambda, API Gateway, and DynamoDB to process events, improving latency and reliability.
+Repaired and optimized Azure DevOps CI/CD pipelines, added lint and test stages, and cut deployment time by 30%(10 mins → 7 mins).
+Scaled an activity-tracking service app by automating SharePoint updates via Azure Runbooks and Microsoft Graph API, saving ~30 staff hours/month.
+Raised unit-test coverage 40% → 85% across internal web applications using Jest
+Integrated an sentiment classifier with Azure OpenAI Service using C# to prioritize support tickets, reducing triage time by 30%
+Actively contributed to Agile ceremonies such as sprint planning, daily stand-up, retrospectives and code review meetings, fostering team alignment and driving project progress.
+
+Projects	
+Stock Portfolio Tracker | React, Python (FastAPI), PostgreSQL, Tailwind CSS	May 2025
+Built a full-stack portfolio tracker with React frontend and Python (FastAPI) backend, enabling users to add, edit, and monitor stock holdings.
+Integrated a market data API (Finnhub) to fetch live stock prices in JSON and calculate portfolio market value and profit/loss, with PostgreSQL for persistent storage.
+Delivered a responsive dashboard with tables and charts using Tailwind CSS and Recharts, improving usability and data visualization.
+
+JobPilot – AI Powered Assistant | TypeScript, Next.js, React, Tailwind CSS, MongoDB	Feb 2025
+Built and deployed an AI assistant platform (Next.js, React, TypeScript, LLM APIs) on AWS Lambda with API Gateway and DynamoDB, adopted by ~50 job seekers to analyze resume–job fit.
+Designed a responsive UI with Tailwind CSS and Shadcn, improving load times to ~1.2s and cutting bundle size by 30% through code-splitting and lazy loading.
+Created serverless APIs with AWS Lambda and API Gateway for resume parsing, job matching, billing (Stripe), and user management, using dependency injection to keep functions modular and testable.
+Automated deployments of Lambda functions using GitHub Actions and Docker, reducing release cycles from 25 mins → 5 mins and supporting weekly production pushes.
+Enhanced reliability with 80%+ test coverage in Jest and real-time monitoring via CloudWatch and Datadog for Lambda performance and DynamoDB metrics.
+
+MyRepoReader – Go CLI for Repository Snapshots | Go, Git, Markdown, CLI Tools, Open Source 	Aug 2025
+Developed a cross-platform CLI tool in Go to generate Markdown snapshots of repositories with nested .gitignore support and binary-safe handling.
+Implemented Git-tracked, text-only file and line counts, enabling accurate summaries and reproducible project context for LLMs and documentation.
+Released the project as open source on GitHub with versioned tagging, installation instructions, and portable usage across developer workflows.
+
+Education	
+Diploma in Computer Programming	Apr 2025
+Seneca Polytechnic	Toronto, ON
+GPA 4.0/4.0, President’s Honour List
+Relevant Coursework: Web Programming Tools & Frameworks, Advanced Databases, Object-Oriented Programming, Software Testing, Data Structures & Algorithms
+Master of Commerce and Master of Professional Accounting 	Feb 2011
+University of Sydney 	 Sydney, Australia 
+Bachelor of Economics 	June 2008
+Renmin (People’s) University of China  	 Beijing, China 
