@@ -185,7 +185,7 @@ def create_application_folder(company_name, position_name, position_type, resume
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 4:
         print("Usage: python script.py <CompanyName> <PositionName> <Type>")
         sys.exit(1)
 
