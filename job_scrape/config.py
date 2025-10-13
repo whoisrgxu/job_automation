@@ -14,11 +14,11 @@ class Config:
     
     # Search parameters
     KEYWORDS = [
-        # 'developer not senior',
-        # 'Node.js developer not senior',
-        # 'typescript developer not senior',
+        'developer not senior',
+        'Node.js developer not senior',
+        'typescript developer not senior',
         'react developer not senior',
-        # 'python developer not senior',
+        'python developer not senior',
         'next.js developer not senior',
     ]
     

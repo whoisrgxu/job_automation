@@ -118,7 +118,7 @@ def improve_resume_json(job_description: str, additional_info: str = None, user_
         return {}
 
 # ---------- RAG HELPER ----------
-def retrieve_context_from_pinecone(query: str, user_id: str, top_k: int = 5) -> str:
+def retrieve_context_from_pinecone(query: str, user_id: str, top_k: int = 10) -> str:
     """Retrieve top resume chunks related to the job description."""
     # 1. Embed the query
     emb = client.embeddings.create(

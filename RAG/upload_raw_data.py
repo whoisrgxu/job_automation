@@ -63,13 +63,20 @@ def embed_and_upload(file_path, user_id):
 if __name__ == "__main__":
     # List of files to embed
     files_to_embed = [
-        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/resume.txt",
-        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Fullstack_Resume.docx",
-        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Frontend_Resume.docx",
-        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_SharePoint_Resume.docx",
-        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Rong Gang Xu_Resume_v3.docx",
         "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Other_things.txt",
-        # Add more files as needed
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/resume.txt",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Accommodations Plus International_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_AWS_Backend_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Capital One_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Dawn InfoTek_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Frontend_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Fullstack_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Optimize Financial Group_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Rockwell Automation_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_Scotiabank_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_SharePoint_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Roger Xu_TekStaff IT Solutions_Resume.docx",
+        "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/AI_Feed/Rong Gang Xu_Resume_v3.docx",
     ]
     
     user_id = "roger"  # Your user identifier

@@ -166,7 +166,7 @@ Job Description:
         
         return results
     
-    def filter_good_matches(self, results: List[Dict[str, Any]], min_score: int = 67) -> List[Dict[str, Any]]:
+    def filter_good_matches(self, results: List[Dict[str, Any]], min_score: int = 70) -> List[Dict[str, Any]]:
         """Filter jobs with match score >= min_score"""
         good_matches = []
         for result in results:
@@ -217,15 +217,15 @@ def main():
         results = analyzer.analyze_all_jobs(resume_path, jobs_path)
         
         # Filter good matches
-        print("\nFiltering good matches (score >= 50)...")
-        good_matches = analyzer.filter_good_matches(results, min_score=50)
+        print("\nFiltering good matches (score >= 70)...")
+        good_matches = analyzer.filter_good_matches(results, min_score=70)
         
         # Save results
         if good_matches:
             analyzer.save_good_matches(good_matches, output_path)
-            print(f"\n✅ Found {len(good_matches)} jobs with good match scores (>= 50)")
+            print(f"\n✅ Found {len(good_matches)} jobs with good match scores (>= 70)")
         else:
-            print("\n❌ No jobs found with match scores >= 50")
+            print("\n❌ No jobs found with match scores >= 70")
             # Still save empty results
             with open(output_path, 'w', encoding='utf-8') as file:
                 json.dump([], file, indent=2)
