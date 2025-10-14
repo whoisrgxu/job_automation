@@ -5,3 +5,6 @@
 */.env
 */__pycache__/
 */venv/
+/job_scrape/linkedin_jobs/
+/job_fit_analysis/good_score_jobs.json
+/job_fit_analysis/linkedin_jobs.json
