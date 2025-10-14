@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Job Fit Analysis System using Gemini 2.0 Flash
-Analyzes job matches against a resume and filters for good matches (score >= 50)
+Analyzes job matches against a resume and filters for good matches (score >= 70)
 """
 
 import json
@@ -166,7 +166,7 @@ Job Description:
         
         return results
     
-    def filter_good_matches(self, results: List[Dict[str, Any]], min_score: int = 67) -> List[Dict[str, Any]]:
+    def filter_good_matches(self, results: List[Dict[str, Any]], min_score: int = 71) -> List[Dict[str, Any]]:
         """Filter jobs with match score >= min_score"""
         good_matches = []
         for result in results:
@@ -217,15 +217,15 @@ def main():
         results = analyzer.analyze_all_jobs(resume_path, jobs_path)
         
         # Filter good matches
-        print("\nFiltering good matches (score >= 50)...")
-        good_matches = analyzer.filter_good_matches(results, min_score=50)
+        print("\nFiltering good matches (score >= 70)...")
+        good_matches = analyzer.filter_good_matches(results, min_score=71)
         
         # Save results
         if good_matches:
             analyzer.save_good_matches(good_matches, output_path)
-            print(f"\n✅ Found {len(good_matches)} jobs with good match scores (>= 50)")
+            print(f"\n✅ Found {len(good_matches)} jobs with good match scores (>= 71)")
         else:
-            print("\n❌ No jobs found with match scores >= 50")
+            print("\n❌ No jobs found with match scores >= 71")
             # Still save empty results
             with open(output_path, 'w', encoding='utf-8') as file:
                 json.dump([], file, indent=2)
@@ -237,7 +237,7 @@ def main():
         print(f"Total jobs analyzed: {len(results)}")
         print(f"Successful analyses: {len([r for r in results if r['status'] == 'success'])}")
         print(f"Failed analyses: {len([r for r in results if r['status'] == 'error'])}")
-        print(f"Good matches (score >= 50): {len(good_matches)}")
+        print(f"Good matches (score >= 70): {len(good_matches)}")
         
         if good_matches:
             print("\nGood matches:")

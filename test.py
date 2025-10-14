@@ -8,7 +8,7 @@ from openpyxl import load_workbook, Workbook
 import subprocess
 
 excel_log_path = "/Users/Roger/Documents/FullTime-Resume/Job Tracker.xlsx"
-
+already_applied = False
 def already_applied(excel_path, sheet_name, company_name, position_name):
     """Check if a company/position already exists in the tracker."""
     if not os.path.exists(excel_path):
@@ -66,6 +66,7 @@ def create_application_folder(company_name, position_name, position_type, resume
 
     # Check if already applied
     if already_applied(excel_log_path, "Job Tracker", company_name, position_name):
+        already_applied = True
         print(f"⚠️ WARNING: You have already applied to '{position_name}' at '{company_name}'. Skipping...")
         return
     
@@ -224,7 +225,7 @@ if __name__ == "__main__":
     create_application_folder(company, position, position_type, resume, coverLetter, jd_source_path)
 
     # If not easy apply, run coverletter customizer
-    if easy_apply == "false" and not already_applied(excel_log_path, "Job Tracker", company, position):
+    if easy_apply == "false" and already_applied is False:
         print("🔄 Running coverletter customizer...")
         import subprocess
         coverletter_script = "/Users/Roger/Documents/PersonalProject/Job Automation/coverletter_customizer.py"
