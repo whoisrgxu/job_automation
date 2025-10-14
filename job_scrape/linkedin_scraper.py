@@ -123,6 +123,12 @@ class LinkedInJobScraper:
 
                         title = await title_el.inner_text() if title_el else "N/A"
                         company = await company_el.inner_text() if company_el else "N/A"
+
+                        # continue if company is within a blacklist company list
+                        if company in self.config.BLACKLIST_COMPANIES:
+                            print(f"⏩ Skipping job: {title.strip()} - Company in blacklist")
+                            continue
+                        
                         location = await location_el.inner_text() if location_el else "N/A"
 
                         # define what is GTA cities

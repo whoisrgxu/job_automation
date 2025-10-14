@@ -22,7 +22,13 @@ class Config:
         'next.js developer not senior',
         'AWS developer not senior',
     ]
-    
+    # Blacklist companies
+    BLACKLIST_COMPANIES = [
+        'Jerry',
+        'wanderlog',
+        'Lumenalta',
+        'Dawn Infoteck'
+    ]
     # Location filters
     LOCATIONS = [
         'Ontario, Canada',
