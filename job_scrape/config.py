@@ -12,16 +12,18 @@ class Config:
     LINKEDIN_EMAIL = os.getenv('LINKEDIN_EMAIL', '')
     LINKEDIN_PASSWORD = os.getenv('LINKEDIN_PASSWORD', '')
     
-    # Search parameters
-    KEYWORDS = [
-        'developer not senior',
-        'Node.js developer not senior',
-        'typescript developer not senior',
-        'react developer not senior',
-        'python developer not senior',
-        'next.js developer not senior',
-        'AWS developer not senior',
-    ]
+    # Search parameters with keywords and pages needed
+    KEYWORDS = {
+        'developer not senior': 2,
+        'Node.js developer not senior': 2,
+        'typescript developer not senior': 2,
+        'JavaScript developer not senior': 2,
+        'react developer not senior': 2,
+        'python developer not senior': 2,
+        'next.js developer not senior': 2,
+        'AWS developer not senior': 1,
+        'engineer in test': 1,
+    }
     # Blacklist companies
     BLACKLIST_COMPANIES = [
         'Jerry',

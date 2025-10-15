@@ -80,11 +80,10 @@ class LinkedInJobScraper:
 
     # ------------------------- Core scraping logic -------------------------
 
-    async def extract_job_data(self, page: Page, frame: Page) -> List[Dict]:
-        """Extract job cards (title, company, location, description) from LinkedIn job search results (up to 3 pages)."""
+    async def extract_job_data(self, page: Page, frame: Page, max_pages: int = 1) -> List[Dict]:
+        """Extract job cards (title, company, location, description) from LinkedIn job search results (up to max_pages)."""
         jobs = []
         page_number = 1
-        max_pages = 1  # 🔒 Limit pagination to 3 pages
 
         try:
             while page_number <= max_pages:
@@ -155,7 +154,15 @@ class LinkedInJobScraper:
                         if repost_el:
                             print(f"⏩ Skipping reposted job: {title.strip()}")
                             continue
+
+                        # Skip closed jobs
+                        closed_el = await frame.query_selector('span.artdeco-inline-feedback__message:has-text("No longer accepting applications")')
+                        if closed_el:
+                            print(f"⏩ Skipping closed job: {title.strip()}")
+                            continue
+
                         ifEasyApply = await frame.query_selector('span.artdeco-button__text:has-text("Easy Apply")')
+                        
                         # Extract description
                         desc_el = await frame.query_selector(
                             ".jobs-box__html-content, .show-more-less-html__markup"
@@ -198,7 +205,7 @@ class LinkedInJobScraper:
 
                 # 🔁 Pagination (stop if no Next or reached page limit)
                 if page_number >= max_pages:
-                    print("⏹️ Reached max page limit (3). Stopping pagination.")
+                    print(f"⏹️ Reached max page limit ({max_pages}). Stopping pagination.")
                     break
 
                 next_button = await frame.query_selector(
@@ -229,7 +236,7 @@ class LinkedInJobScraper:
 
         return jobs
 
-    async def search_jobs(self, page: Page, context: BrowserContext, keyword: str, location: str = "") -> List[Dict]:
+    async def search_jobs(self, page: Page, context: BrowserContext, keyword: str, location: str = "", max_pages: int = 1) -> List[Dict]:
         """Search by keyword/location and paginate, including clicking 'Past 24 hours' filter."""
         all_jobs = []
         try:
@@ -276,7 +283,7 @@ class LinkedInJobScraper:
 
 
             # --- Extract job data inside iframe ---
-            page_jobs = await self.extract_job_data(page, frame)
+            page_jobs = await self.extract_job_data(page, frame, max_pages)
             all_jobs.extend(page_jobs)
 
         except Exception as e:
@@ -300,11 +307,11 @@ class LinkedInJobScraper:
                         await self.login(page)
                 else:
                     print("✅ Already logged in — skipping login")
-
-                for keyword in self.config.KEYWORDS:
+                #now KEYWWORDS IS A DICT
+                for keyword, max_pages in self.config.KEYWORDS.items():
                     for location in self.config.LOCATIONS:
                         print(f"\n🔍 Searching: {keyword} in {location}")
-                        jobs = await self.search_jobs(page, context, keyword, location)
+                        jobs = await self.search_jobs(page, context, keyword, location, max_pages)
                         self.jobs_data.extend(jobs)
                         await self.helpers.human_like_delay(5, 10)
 
