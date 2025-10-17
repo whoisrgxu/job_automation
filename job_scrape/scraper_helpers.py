@@ -97,3 +97,22 @@ class ScraperHelpers:
     def extract_job_id(self, url: str) -> str:
         """Extract job ID from LinkedIn job URL"""
         return url.split("/")[-2]
+
+    def has_french_words(self, text: str) -> bool:
+        """Check if text contains at least 2 common French words"""
+        if not text:
+            return False
+        
+        # Just 4 very common French words
+        french_words = ['nous', 'pour', 'avec', 'dans']
+        
+        text_lower = text.lower()
+        
+        # Count how many of these French words appear
+        count = 0
+        for word in french_words:
+            if word in text_lower:
+                count += 1
+        
+        # If 2 or more of these words appear, likely French
+        return count >= 2

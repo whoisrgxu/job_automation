@@ -19,11 +19,17 @@ class Config:
         'typescript developer not senior': 2,
         'JavaScript developer not senior': 2,
         'react developer not senior': 2,
-        'python developer not senior': 2,
+        # 'python developer not senior': 2,
+        'software engineer not senior': 2,
         'next.js developer not senior': 2,
         'AWS developer not senior': 1,
         'engineer in test': 1,
     }
+
+    # title keywords blacklist
+    TITLE_KEYWORDS_BLACKLIST = [
+        'Data Engineer',  
+    ]
     # Blacklist companies
     BLACKLIST_COMPANIES = [
         'Jerry',

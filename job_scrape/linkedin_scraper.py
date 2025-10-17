@@ -127,6 +127,11 @@ class LinkedInJobScraper:
                         if company in self.config.BLACKLIST_COMPANIES:
                             print(f"⏩ Skipping job: {title.strip()} - Company in blacklist")
                             continue
+
+                        # continue if title contains any of the title keywords blacklist
+                        if any(keyword in title for keyword in self.config.TITLE_KEYWORDS_BLACKLIST):
+                            print(f"⏩ Skipping job: {title.strip()} - Title contains keyword in blacklist")
+                            continue
                         
                         location = await location_el.inner_text() if location_el else "N/A"
 
@@ -145,7 +150,7 @@ class LinkedInJobScraper:
                         print(f"🖱️ Clicked job: {title.strip()} — waiting for description...")
                         await frame.wait_for_selector(
                             ".jobs-box__html-content, .show-more-less-html__markup",
-                            timeout=10000
+                            timeout=20000
                         )
                         await self.helpers.human_like_delay(1, 2)
 
@@ -168,6 +173,12 @@ class LinkedInJobScraper:
                             ".jobs-box__html-content, .show-more-less-html__markup"
                         )
                         description = await desc_el.inner_text() if desc_el else ""
+
+                        # Check if description has French words
+                        if self.helpers.has_french_words(description):
+                            print(f"⏩ Skipping job: {title.strip()} - French job description")
+                            continue
+                        
                         # get the href of the job link
                         job_url = "https://www.linkedin.com" + await frame.get_attribute(".job-details-jobs-unified-top-card__job-title h1 a", "href")
                         job_id = self.helpers.extract_job_id(job_url)
@@ -268,13 +279,13 @@ class LinkedInJobScraper:
                 await self.helpers.human_like_delay(1, 2)
 
                 # Select "Past 24 hours"
-                await frame.wait_for_selector('label[for="timePostedRange-r86400"]', timeout=10000)
+                await frame.wait_for_selector('label[for="timePostedRange-r86400"]', timeout=20000)
                 await frame.click('label[for="timePostedRange-r86400"]')
                 print("✅ Selected 'Past 24 hours' filter successfully")
                 await self.helpers.human_like_delay(1, 2)
 
                 # Click “Show results” to apply the filter
-                await frame.wait_for_selector('button[aria-label*="Apply current filter"], button:has-text("Show results")', timeout=10000)
+                await frame.wait_for_selector('button[aria-label*="Apply current filter"], button:has-text("Show results")', timeout=20000)
                 await frame.click('button[aria-label*="Apply current filter"], button:has-text("Show results")')
                 print("✅ Clicked 'Show results' to apply the filter")
                 await self.helpers.human_like_delay(3, 5)
