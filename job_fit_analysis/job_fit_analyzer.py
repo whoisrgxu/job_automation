@@ -154,6 +154,11 @@ Job Description:
         results = []
         for i, job in enumerate(jobs, 1):
             print(f"[{i}/{len(jobs)}] Processing job...")
+            
+            # Add 5-second delay before analyzing job fit
+            import time
+            time.sleep(5)
+            
             result = self.analyze_job_fit(resume_text, job)
             results.append(result)
             

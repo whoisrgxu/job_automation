@@ -29,13 +29,16 @@ class Config:
     # title keywords blacklist
     TITLE_KEYWORDS_BLACKLIST = [
         'Data Engineer',  
+        'Data Science',
+        'Machine Learning',
     ]
     # Blacklist companies
     BLACKLIST_COMPANIES = [
         'Jerry',
         'wanderlog',
         'Lumenalta',
-        'Dawn Infoteck'
+        'Dawn Infoteck',
+        'J&M Group'
     ]
     # Location filters
     LOCATIONS = [

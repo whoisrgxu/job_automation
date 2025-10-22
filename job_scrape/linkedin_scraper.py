@@ -136,7 +136,7 @@ class LinkedInJobScraper:
                         location = await location_el.inner_text() if location_el else "N/A"
 
                         # define what is GTA cities
-                        GTA_CITIES = ['Toronto', 'Markham', 'Richmond Hill', 'Mississauga', 'Brampton', 'Vaughan', 'Oakville', 'Burlington', 'Hamilton', 'GTA', 'Greater Toronto Area', 'Remote']
+                        GTA_CITIES = ['Toronto', 'Markham', 'Richmond Hill', 'Mississauga', 'Brampton', 'Vaughan', 'Oakville', 'Burlington', 'Hamilton', 'Oshawa', 'Pickering', 'Ajax', 'Whitchurch-Stouffville', 'Whitby', 'North York','Greater Toronto Area', 'Remote', 'GTA', 'Caledon', 'NewMarket', 'King', 'Uxbridge', 'Aurora', 'Scugog', 'East York']
 
                         # check across all the cities in GTA, ontario, canada. If the location doesn't include any of the GTA cities, skip
                         if not any(city in location for city in GTA_CITIES):
@@ -178,7 +178,7 @@ class LinkedInJobScraper:
                         if self.helpers.has_french_words(description):
                             print(f"⏩ Skipping job: {title.strip()} - French job description")
                             continue
-                        
+
                         # get the href of the job link
                         job_url = "https://www.linkedin.com" + await frame.get_attribute(".job-details-jobs-unified-top-card__job-title h1 a", "href")
                         job_id = self.helpers.extract_job_id(job_url)
