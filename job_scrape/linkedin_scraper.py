@@ -51,6 +51,7 @@ import random
 import json
 from datetime import datetime, timedelta, timezone
 import shutil
+import time
 from typing import List, Dict, Optional
 # import pandas as pd
 from playwright.async_api import async_playwright, BrowserContext, Page
@@ -67,20 +68,20 @@ class LinkedInJobScraper:
         self.jobs_data = []
 
     # ------------------------- Utility helpers -------------------------
-    async def scroll_visually_down(self, page: Page, frame: Page, selector: str, duration: float = 6.0, step: int = 220):
+    async def scroll_visually_down(self, page: Page, selector: str, duration: float = 6.0, step: int = 220):
         print(f"🖱️ Moving mouse to first job card and scrolling {selector} down slowly...")
-        await frame.wait_for_selector(selector, timeout=20000)
+        await page.wait_for_selector(selector, timeout=20000)
 
         start_time = asyncio.get_event_loop().time()
         while (asyncio.get_event_loop().time() - start_time) < duration:
-            await frame.evaluate(f"document.querySelector('{selector}').scrollBy(0, {step})")
+            await page.evaluate(f"document.querySelector('{selector}').scrollBy(0, {step})")
             await self.helpers.human_like_delay(0.3, 0.5)
         print("✅ Finished visual scroll.")
 
 
     # ------------------------- Core scraping logic -------------------------
 
-    async def extract_job_data(self, page: Page, frame: Page, max_pages: int = 1) -> List[Dict]:
+    async def extract_job_data(self, page: Page, max_pages: int = 1) -> List[Dict]:
         """Extract job cards (title, company, location, description) from LinkedIn job search results (up to max_pages)."""
         jobs = []
         page_number = 1
@@ -90,16 +91,16 @@ class LinkedInJobScraper:
                 print(f"\n📄 Scraping page {page_number}...")
 
                 # 🔄 Scroll job list to ensure all lazy-loaded jobs appear
-                await self.scroll_visually_down(page, frame, selector="ul.semantic-search-results-list")
+                await self.scroll_visually_down(page, selector=".semantic-search-results-list")
 
                 # 🧭 Wait for visible job cards
-                await frame.wait_for_selector(
+                await page.wait_for_selector(
                     ".job-card-job-posting-card-wrapper, div[data-job-id], li[data-job-id]",
                     state="attached",
                     timeout=20000
                 )
 
-                job_elements = await frame.query_selector_all(
+                job_elements = await page.query_selector_all(
                     ".job-card-job-posting-card-wrapper, div[data-job-id], li[data-job-id]"
                 )
                 print(f"✅ Found {len(job_elements)} job cards on page {page_number}")
@@ -148,28 +149,28 @@ class LinkedInJobScraper:
                         # Click job card (to load right panel)
                         await link_el.click()
                         print(f"🖱️ Clicked job: {title.strip()} — waiting for description...")
-                        await frame.wait_for_selector(
+                        await page.wait_for_selector(
                             ".jobs-box__html-content, .show-more-less-html__markup",
                             timeout=20000
                         )
                         await self.helpers.human_like_delay(1, 2)
 
                         # Skip reposted jobs
-                        repost_el = await frame.query_selector('span:has-text("Reposted")')
+                        repost_el = await page.query_selector('span:has-text("Reposted")')
                         if repost_el:
                             print(f"⏩ Skipping reposted job: {title.strip()}")
                             continue
 
                         # Skip closed jobs
-                        closed_el = await frame.query_selector('span.artdeco-inline-feedback__message:has-text("No longer accepting applications")')
+                        closed_el = await page.query_selector('span.artdeco-inline-feedback__message:has-text("No longer accepting applications")')
                         if closed_el:
                             print(f"⏩ Skipping closed job: {title.strip()}")
                             continue
 
-                        ifEasyApply = await frame.query_selector('span.artdeco-button__text:has-text("Easy Apply")')
+                        ifEasyApply = await page.query_selector('span.artdeco-button__text:has-text("Easy Apply")')
                         
                         # Extract description
-                        desc_el = await frame.query_selector(
+                        desc_el = await page.query_selector(
                             ".jobs-box__html-content, .show-more-less-html__markup"
                         )
                         description = await desc_el.inner_text() if desc_el else ""
@@ -180,10 +181,10 @@ class LinkedInJobScraper:
                             continue
 
                         # get the href of the job link
-                        job_url = "https://www.linkedin.com" + await frame.get_attribute(".job-details-jobs-unified-top-card__job-title h1 a", "href")
+                        job_url = "https://www.linkedin.com" + await page.get_attribute(".job-details-jobs-unified-top-card__job-title h1 a", "href")
                         job_id = self.helpers.extract_job_id(job_url)
                         # Extract posted date
-                        date_el = await frame.query_selector(
+                        date_el = await page.query_selector(
                             ".job-details-jobs-unified-top-card__primary-description-container span.tvm__text--positive strong span"
                         )
                         posted_date = await date_el.inner_text() if date_el else "N/A"
@@ -219,7 +220,7 @@ class LinkedInJobScraper:
                     print(f"⏹️ Reached max page limit ({max_pages}). Stopping pagination.")
                     break
 
-                next_button = await frame.query_selector(
+                next_button = await page.query_selector(
                     'button[aria-label="View next page"]'
                 )
                 if next_button:
@@ -234,7 +235,7 @@ class LinkedInJobScraper:
                     await self.helpers.human_like_delay(3, 5)
 
                     # Wait for job list refresh
-                    await frame.wait_for_selector(
+                    await page.wait_for_selector(
                         ".job-card-job-posting-card-wrapper, div[data-job-id], li[data-job-id]",
                         timeout=20000
                     )
@@ -262,39 +263,33 @@ class LinkedInJobScraper:
             await search_input.press("Enter")
             await self.helpers.human_like_delay(3, 5)
 
-            # --- Detect and switch into the jobs iframe ---
-            frame_element = await page.wait_for_selector("iframe[data-testid='interop-iframe']", timeout=30000)
-            frame = await frame_element.content_frame()
+            # --- Wait for job search results container ---
+            await page.wait_for_selector(".scaffold-layout__list.jobs-semantic-search-list", timeout=30000)
+            print("✅ Found job search results container")
 
-            if frame:
-                print("✅ Switched into LinkedIn interop iframe")
-            else:
-                raise Exception("❌ Could not find interop iframe")
-
-            # --- Click “Date Posted” filter and select “Past 24 hours” ---
+            # --- Click "Date Posted" filter and select "Past 24 hours" ---
             try:
                 # Click the "Date posted" dropdown
-                await frame.wait_for_selector('#searchFilter_timePostedRange', state="attached", timeout=20000)
-                await frame.click('#searchFilter_timePostedRange')
+                await page.wait_for_selector('#searchFilter_timePostedRange', state="attached", timeout=20000)
+                await page.click('#searchFilter_timePostedRange')
                 await self.helpers.human_like_delay(1, 2)
 
                 # Select "Past 24 hours"
-                await frame.wait_for_selector('label[for="timePostedRange-r86400"]', timeout=20000)
-                await frame.click('label[for="timePostedRange-r86400"]')
+                await page.wait_for_selector('label[for="timePostedRange-r86400"]', timeout=20000)
+                await page.click('label[for="timePostedRange-r86400"]')
                 print("✅ Selected 'Past 24 hours' filter successfully")
                 await self.helpers.human_like_delay(1, 2)
 
-                # Click “Show results” to apply the filter
-                await frame.wait_for_selector('button[aria-label*="Apply current filter"], button:has-text("Show results")', timeout=20000)
-                await frame.click('button[aria-label*="Apply current filter"], button:has-text("Show results")')
+                # Click "Show results" to apply the filter
+                await page.wait_for_selector('button[aria-label*="Apply current filter"], button:has-text("Show results")', timeout=20000)
+                await page.click('button[aria-label*="Apply current filter"], button:has-text("Show results")')
                 print("✅ Clicked 'Show results' to apply the filter")
                 await self.helpers.human_like_delay(3, 5)
             except Exception as e:
                 print(f"⚠️ Could not apply 'Past 24 hours' filter: {e}")
 
-
-            # --- Extract job data inside iframe ---
-            page_jobs = await self.extract_job_data(page, frame, max_pages)
+            # --- Extract job data from main DOM ---
+            page_jobs = await self.extract_job_data(page, max_pages)
             all_jobs.extend(page_jobs)
 
         except Exception as e:
