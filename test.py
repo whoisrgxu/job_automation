@@ -1,13 +1,30 @@
 import os
+import re
 import shutil
 import sys
+from datetime import datetime, timedelta
+
 from docx import Document
-from datetime import datetime
 from resume_customizer import customize_resume_with_placeholders
 from openpyxl import load_workbook, Workbook
 import subprocess
 
 excel_log_path = "/Users/Roger/Documents/FullTime-Resume/Job Tracker.xlsx"
+def _parse_tracker_date(value):
+    if isinstance(value, datetime):
+        return value
+    if not value:
+        return None
+    if isinstance(value, str):
+        cleaned = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", value.strip())
+        for fmt in ("%B %d, %Y", "%b %d, %Y"):
+            try:
+                return datetime.strptime(cleaned, fmt)
+            except ValueError:
+                continue
+    return None
+
+
 def already_applied(excel_path, sheet_name, company_name, position_name):
     """Check if a company/position already exists in the tracker."""
     if not os.path.exists(excel_path):
@@ -22,6 +39,10 @@ def already_applied(excel_path, sheet_name, company_name, position_name):
         if not row: 
             continue
         existing_company, existing_position, *_ = row
+        applied_date_raw = row[2] if len(row) > 2 else None
+        applied_date = _parse_tracker_date(applied_date_raw)
+        if applied_date and datetime.now() - applied_date > timedelta(days=62):
+            continue
         if (existing_company and existing_company.strip().lower() == company_name.strip().lower() and
             existing_position and existing_position.strip().lower() == position_name.strip().lower()):
             return True
