@@ -37,7 +37,7 @@ class Config:
         'Jerry',
         'wanderlog',
         'Lumenalta',
-        'Dawn Infoteck',
+        'Dawn InfoTeck',
         'J&M Group'
     ]
     # Location filters

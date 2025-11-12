@@ -1,6 +1,6 @@
 playwright>=1.41.0
-requests==2.31.0
+requests>=2.31.0
 fake-useragent==1.4.0
-python-dotenv==1.0.0
+python-dotenv>=1.0.0
 pandas>=2.2.0
 beautifulsoup4==4.12.2

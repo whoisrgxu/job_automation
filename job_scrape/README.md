@@ -16,8 +16,9 @@ A sophisticated LinkedIn job scraper built with Playwright that simulates human 
 
 1. **Clone or download the project files**
 
-2. **Install Python dependencies:**
+2. **Install Python dependencies (after activating the shared root venv):**
    ```bash
+   source ../venv/bin/activate
    pip install -r requirements.txt
    ```
 

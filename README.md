@@ -52,26 +52,11 @@ Job Automation/
    cd "Job Automation"
    ```
 
-2. **Create virtual environments**
+2. **Create the shared virtual environment**
    ```bash
-   # Main project
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -r requirements.txt
-
-   # Job scraper
-   cd job_scrape
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   cd ..
-
-   # Job fit analysis
-   cd job_fit_analysis
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   cd ..
    ```
 
 3. **Configure environment variables**
@@ -113,18 +98,20 @@ This will:
 
 ### Individual Components
 
+Activate the root virtual environment once before running any module:
+
+```bash
+source venv/bin/activate
+```
+
 #### 1. Job Scraping
 ```bash
-cd job_scrape
-source venv/bin/activate
-python run_scraper.py
+python job_scrape/run_scraper.py
 ```
 
 #### 2. Job Fit Analysis
 ```bash
-cd job_fit_analysis
-source venv/bin/activate
-python job_fit_analyzer.py
+python job_fit_analysis/job_fit_analyzer.py
 ```
 
 #### 3. Resume Customization

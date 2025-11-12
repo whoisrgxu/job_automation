@@ -19,9 +19,14 @@ from pathlib import Path
 
 class JobAutomationOrchestrator:
     def __init__(self):
-        self.project_root = Path(__file__).parent
+        self.project_root = Path(__file__).parent.resolve()
         self.job_description_path = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/job_description.txt"
         self.good_jobs_path = self.project_root / "job_fit_analysis" / "good_score_jobs.json"
+        venv_dir = self.project_root / "venv"
+        if sys.platform.startswith("win"):
+            self.root_python = venv_dir / "Scripts" / "python.exe"
+        else:
+            self.root_python = venv_dir / "bin" / "python"
         
     def log(self, message):
         """Log message with timestamp"""
@@ -66,14 +71,13 @@ class JobAutomationOrchestrator:
         self.log("=" * 60)
         
         scraper_path = self.project_root / "job_scrape" / "run_scraper.py"
-        scraper_venv = self.project_root / "job_scrape" / "venv" / "bin" / "python"
         
         if not scraper_path.exists():
             raise FileNotFoundError(f"Scraper not found: {scraper_path}")
-        if not scraper_venv.exists():
-            raise FileNotFoundError(f"Scraper virtual environment not found: {scraper_venv}")
+        if not self.root_python.exists():
+            raise FileNotFoundError(f"Root virtual environment Python not found: {self.root_python}")
             
-        command = f"\"{scraper_venv}\" \"{scraper_path}\""
+        command = f"\"{self.root_python}\" \"{scraper_path}\""
         self.run_subprocess(
             command, 
             cwd=str(scraper_path.parent),
@@ -90,14 +94,13 @@ class JobAutomationOrchestrator:
         self.log("=" * 60)
         
         analyzer_path = self.project_root / "job_fit_analysis" / "job_fit_analyzer.py"
-        analyzer_venv = self.project_root / "job_fit_analysis" / "venv" / "bin" / "python"
         
         if not analyzer_path.exists():
             raise FileNotFoundError(f"Analyzer not found: {analyzer_path}")
-        if not analyzer_venv.exists():
-            raise FileNotFoundError(f"Analyzer virtual environment not found: {analyzer_venv}")
+        if not self.root_python.exists():
+            raise FileNotFoundError(f"Root virtual environment Python not found: {self.root_python}")
             
-        command = f"\"{analyzer_venv}\" \"{analyzer_path}\""
+        command = f"\"{self.root_python}\" \"{analyzer_path}\""
         
         # Run analyzer in project root so relative paths (./job_scrape/...) resolve correctly
         self.run_subprocess(
@@ -153,16 +156,17 @@ DESCRIPTION:
         self.log("=" * 60)
         
         test_path = self.project_root / "test.py"
-        main_venv = self.project_root / "venv" / "bin" / "python"
         
         if not test_path.exists():
             raise FileNotFoundError(f"Test script not found: {test_path}")
+        if not self.root_python.exists():
+            raise FileNotFoundError(f"Root virtual environment Python not found: {self.root_python}")
         
         company = self.process_title_or_company_name(company)
         title = self.process_title_or_company_name(title)
         easy_apply = "true" if easy_apply else "false"
         
-        command = f"\"{main_venv}\" test.py \"{company}\" \"{title}\" \"fullstack\" \"{easy_apply}\""
+        command = f"\"{self.root_python}\" test.py \"{company}\" \"{title}\" \"fullstack\" \"{easy_apply}\""
         self.run_subprocess(
             command, 
             cwd=str(test_path.parent),

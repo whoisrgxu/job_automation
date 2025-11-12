@@ -8,7 +8,6 @@ from openpyxl import load_workbook, Workbook
 import subprocess
 
 excel_log_path = "/Users/Roger/Documents/FullTime-Resume/Job Tracker.xlsx"
-was_already_applied = False
 def already_applied(excel_path, sheet_name, company_name, position_name):
     """Check if a company/position already exists in the tracker."""
     if not os.path.exists(excel_path):
@@ -63,12 +62,10 @@ def replace_placeholders_in_docx(input_path, output_path, replacements: dict):
 
 
 def create_application_folder(company_name, position_name, position_type, resume_path, coverLetter_path, jd_source_path=None):
-    global was_already_applied 
     # Check if already applied
     if already_applied(excel_log_path, "Job Tracker", company_name, position_name):
-        was_already_applied = True
         print(f"⚠️ WARNING: You have already applied to '{position_name}' at '{company_name}'. Skipping...")
-        return
+        return False
     
     """
     Create an application folder for a company/position, copy resume & cover letter,
@@ -184,6 +181,8 @@ def create_application_folder(company_name, position_name, position_type, resume
     except Exception as e:
         print(f"⚠️ Failed to write cover letter path: {e}")
 
+    return True
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
@@ -222,10 +221,10 @@ if __name__ == "__main__":
         print("Invalid position type. Use 'default', 'frontend', 'fullstack', or 'sharepoint'.")
         sys.exit(1)
 
-    create_application_folder(company, position, position_type, resume, coverLetter, jd_source_path)
+    folder_created = create_application_folder(company, position, position_type, resume, coverLetter, jd_source_path)
 
     # If not easy apply, run coverletter customizer
-    if easy_apply == "false" and was_already_applied is False:
+    if easy_apply == "false" and folder_created:
         print("🔄 Running coverletter customizer...")
         import subprocess
         coverletter_script = "/Users/Roger/Documents/PersonalProject/Job Automation/coverletter_customizer.py"

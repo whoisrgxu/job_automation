@@ -4,9 +4,11 @@ This system uses Google's Gemini 2.0 Flash model to analyze job matches against 
 
 ## Setup
 
-1. **Install dependencies:**
+1. **Install dependencies (with the shared root venv activated):**
    ```bash
-   pip install -r requirements.txt
+   cd ..
+   source venv/bin/activate
+   pip install -r job_fit_analysis/requirements.txt
    ```
 
 2. **Get Gemini API Key:**

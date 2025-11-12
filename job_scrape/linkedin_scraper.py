@@ -59,6 +59,8 @@ from fake_useragent import UserAgent
 from config import Config
 from scraper_helpers import ScraperHelpers
 import os
+from playwright.async_api import TimeoutError as PWTimeout
+
 
 
 class LinkedInJobScraper:
@@ -248,6 +250,24 @@ class LinkedInJobScraper:
 
         return jobs
 
+    LIST = ".scaffold-layout__list.jobs-semantic-search-list"
+    IFRAME = 'iframe[data-testid="interop-iframe"]'
+
+    async def get_results_surface(self,page):
+        """Return (surface, LIST) where surface is either the page or the iframe's content_frame()."""
+        # 1) Try iframe variant fast
+        try:
+            iframe_el = await page.wait_for_selector(self.IFRAME, timeout=5_000)  # pyright: ignore[reportUndefinedVariable]
+            frame = await iframe_el.content_frame()
+            await frame.wait_for_selector(self.LIST, state="attached", timeout=15_000)  # pyright: ignore[reportUndefinedVariable]
+            return frame, ".scaffold-layout__list.jobs-semantic-search-list"
+        except PWTimeout:  # pyright: ignore[reportUndefinedVariable]
+            pass
+
+        # 2) Fallback to top-level DOM variant
+        await page.wait_for_selector(self.LIST, state="attached", timeout=30_000)  # pyright: ignore[reportUndefinedVariable]
+        return page, self.LIST
+
     async def search_jobs(self, page: Page, context: BrowserContext, keyword: str, location: str = "", max_pages: int = 1) -> List[Dict]:
         """Search by keyword/location and paginate, including clicking 'Past 24 hours' filter."""
         all_jobs = []
@@ -264,32 +284,34 @@ class LinkedInJobScraper:
             await self.helpers.human_like_delay(3, 5)
 
             # --- Wait for job search results container ---
-            await page.wait_for_selector(".scaffold-layout__list.jobs-semantic-search-list", timeout=30000)
+            
+            # await page.wait_for_selector(".scaffold-layout__list.jobs-semantic-search-list", state="attached", timeout=20000)
+            surface, list_selector = await self.get_results_surface(page)
             print("✅ Found job search results container")
 
             # --- Click "Date Posted" filter and select "Past 24 hours" ---
             try:
                 # Click the "Date posted" dropdown
-                await page.wait_for_selector('#searchFilter_timePostedRange', state="attached", timeout=20000)
-                await page.click('#searchFilter_timePostedRange')
+                await surface.wait_for_selector('#searchFilter_timePostedRange', state="attached", timeout=30000)
+                await surface.click('#searchFilter_timePostedRange')
                 await self.helpers.human_like_delay(1, 2)
 
                 # Select "Past 24 hours"
-                await page.wait_for_selector('label[for="timePostedRange-r86400"]', timeout=20000)
-                await page.click('label[for="timePostedRange-r86400"]')
+                await surface.wait_for_selector('label[for="timePostedRange-r86400"]', timeout=30000)
+                await surface.click('label[for="timePostedRange-r86400"]')
                 print("✅ Selected 'Past 24 hours' filter successfully")
                 await self.helpers.human_like_delay(1, 2)
 
                 # Click "Show results" to apply the filter
-                await page.wait_for_selector('button[aria-label*="Apply current filter"], button:has-text("Show results")', timeout=20000)
-                await page.click('button[aria-label*="Apply current filter"], button:has-text("Show results")')
+                await surface.wait_for_selector('button[aria-label*="Apply current filter"], button:has-text("Show results")', timeout=30000)
+                await surface.click('button[aria-label*="Apply current filter"], button:has-text("Show results")')
                 print("✅ Clicked 'Show results' to apply the filter")
                 await self.helpers.human_like_delay(3, 5)
             except Exception as e:
                 print(f"⚠️ Could not apply 'Past 24 hours' filter: {e}")
 
             # --- Extract job data from main DOM ---
-            page_jobs = await self.extract_job_data(page, max_pages)
+            page_jobs = await self.extract_job_data(surface, max_pages)
             all_jobs.extend(page_jobs)
 
         except Exception as e:

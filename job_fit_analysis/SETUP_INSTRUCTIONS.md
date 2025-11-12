@@ -13,7 +13,7 @@ Your job fit analysis system is now ready to use. Here's what has been created:
 - `demo.py` - Demo script showing usage
 - `README.md` - Complete documentation
 - `env_example.txt` - Environment variable template
-- `venv/` - Virtual environment with all dependencies installed
+- `../venv/` - Shared virtual environment for the entire project (activate from root)
 
 ### 🚀 Quick Start:
 
@@ -24,8 +24,10 @@ Your job fit analysis system is now ready to use. Here's what has been created:
 
 2. **Set up your API key:**
    ```bash
-   cd "/Users/Roger/Documents/PersonalProject/Job Automation/job_fit_analysis"
+   cd "/Users/Roger/Documents/PersonalProject/Job Automation"
    source venv/bin/activate
+   # Run once if dependencies haven't been installed yet
+   # pip install -r job_fit_analysis/requirements.txt
    export GEMINI_API_KEY='your_actual_api_key_here'
    ```
 
