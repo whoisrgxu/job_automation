@@ -215,7 +215,7 @@ DESCRIPTION:
             self.log("🚀 Starting Job Automation Workflow")
             self.log("=" * 80)
 
-            # Step 1: Run job scraper
+            # # Step 1: Run job scraper
             self.run_scraper()
 
             # Step 2: Run job fit analyzer

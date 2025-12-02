@@ -1,69 +1,189 @@
 import os
-import re
 import shutil
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime
+from pathlib import Path
 
 from docx import Document
+from openpyxl import Workbook, load_workbook
+
 from resume_customizer import customize_resume_with_placeholders
-from openpyxl import load_workbook, Workbook
+
 import subprocess
 
 excel_log_path = "/Users/Roger/Documents/FullTime-Resume/Job Tracker.xlsx"
-def _parse_tracker_date(value):
-    if isinstance(value, datetime):
-        return value
-    if not value:
-        return None
-    if isinstance(value, str):
-        cleaned = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", value.strip())
-        for fmt in ("%B %d, %Y", "%b %d, %Y"):
+
+
+def convert_docx_to_pdf(docx_path: str) -> str:
+    """
+    Convert a DOCX file to PDF in the same folder.
+    Tries methods in order: WPS Office (via AppleScript), LibreOffice.
+    Returns the path to the PDF file if successful, None otherwise.
+    This function will NEVER raise exceptions - all errors are caught and logged.
+    """
+    try:
+        docx_path_obj = Path(docx_path)
+        if not docx_path_obj.exists():
+            print(f"⚠️ DOCX file not found: {docx_path}")
+            return None
+        
+        # Output PDF path (same folder, same name, .pdf extension)
+        pdf_path = docx_path_obj.with_suffix('.pdf')
+        output_dir = docx_path_obj.parent
+        docx_abs_path = str(docx_path_obj.resolve())
+        pdf_filename = pdf_path.name
+        
+        # Method 1: Try WPS Office (user's preferred office suite) via AppleScript
+        wps_app_paths = [
+            "/Applications/WPS Office.app",
+            "/Applications/Kingsoft Office.app",
+        ]
+        
+        wps_found = False
+        for wps_app in wps_app_paths:
+            if Path(wps_app).exists():
+                wps_found = True
+                print(f"📝 Attempting PDF conversion with WPS Office...")
+                try:
+                    # AppleScript to automate WPS Office to export to PDF
+                    # Note: WPS Office menu structure may vary - this is a simplified approach
+                    applescript = f'''
+                    tell application "WPS Office"
+                        activate
+                        open POSIX file "{docx_abs_path}"
+                    end tell
+                    delay 4
+                    tell application "System Events"
+                        tell process "WPS Office"
+                            try
+                                -- Try keyboard shortcut for export/save as PDF (Cmd+Shift+E or Cmd+P then export)
+                                -- First, try Save As dialog approach
+                                keystroke "s" using {{command down, shift down}}
+                                delay 2
+                                -- In Save As dialog, set format to PDF if possible
+                                -- This is a simplified approach - actual menu may differ
+                                keystroke return
+                                delay 2
+                            on error errMsg
+                                return "Error: " & errMsg
+                            end try
+                        end tell
+                    end tell
+                    delay 3
+                    tell application "WPS Office"
+                        quit
+                    end tell
+                    '''
+                    
+                    result = subprocess.run(
+                        ["osascript", "-e", applescript],
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+                    
+                    # Check if PDF was created (might have a different name if Save As was used)
+                    # Look for any PDF file with similar name in the output directory
+                    if pdf_path.exists():
+                        print(f"✅ PDF exported using WPS Office: {pdf_path}")
+                        return str(pdf_path)
+                    
+                    # Also check if any PDF was created in the directory
+                    pdf_files = list(output_dir.glob("*.pdf"))
+                    if pdf_files:
+                        # Find the most recent PDF that might match
+                        recent_pdf = max(pdf_files, key=lambda p: p.stat().st_mtime)
+                        if recent_pdf.stat().st_mtime > docx_path_obj.stat().st_mtime:
+                            print(f"⚠️ WPS Office created PDF but with different name: {recent_pdf}")
+                            # Rename to expected name
+                            recent_pdf.rename(pdf_path)
+                            print(f"✅ PDF exported using WPS Office: {pdf_path}")
+                            return str(pdf_path)
+                    
+                    print(f"⚠️ WPS Office automation attempted but PDF not created")
+                    if result.stderr:
+                        print(f"   Error: {result.stderr}")
+                except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+                    print(f"⚠️ WPS Office conversion failed: {e}")
+                break
+        
+        # Method 2: Try LibreOffice (most reliable command-line method)
+        if not wps_found or not pdf_path.exists():
+            libreoffice_paths = [
+            "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+            "/usr/local/bin/soffice",
+            "/opt/homebrew/bin/soffice",
+            shutil.which("soffice"),
+        ]
+        
+        libreoffice_cmd = None
+        for path in libreoffice_paths:
+            if path and Path(path).exists():
+                libreoffice_cmd = path
+                break
+        
+        if libreoffice_cmd:
+            print(f"📝 Attempting PDF conversion with LibreOffice...")
             try:
-                return datetime.strptime(cleaned, fmt)
-            except ValueError:
-                continue
-    return None
+                # LibreOffice command to convert to PDF
+                cmd = [
+                    libreoffice_cmd,
+                    "--headless",
+                    "--convert-to", "pdf",
+                    "--outdir", str(output_dir),
+                    str(docx_path_obj)
+                ]
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+                
+                if result.returncode == 0 and pdf_path.exists():
+                    print(f"✅ PDF exported using LibreOffice: {pdf_path}")
+                    return str(pdf_path)
+                elif result.stderr:
+                    print(f"⚠️ LibreOffice conversion failed: {result.stderr[:200]}")
+            except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+                print(f"⚠️ LibreOffice conversion failed: {e}")
+        
+        # All methods failed - log warning but don't fail the script
+        if not pdf_path.exists():
+            if wps_found:
+                print(f"⚠️ PDF conversion unsuccessful. WPS Office automation needs improvement.")
+                print(f"💡 The DOCX files are available for manual PDF export.")
+                print(f"   Or install LibreOffice for reliable command-line PDF conversion: brew install --cask libreoffice")
+            else:
+                print(f"⚠️ PDF conversion skipped: No compatible office suite found.")
+                print(f"💡 Tip: Install LibreOffice for reliable command-line PDF conversion: brew install --cask libreoffice")
+        
+        # Return None gracefully - this is not a critical error
+        return None
+    
+    except Exception as e:
+        # Catch ANY unexpected exception to prevent script from crashing
+        print(f"⚠️ Unexpected error in PDF conversion (non-critical): {e}")
+        print(f"   DOCX file is still available: {docx_path}")
+        return None
 
 
-def already_applied(excel_path, sheet_name, company_name, position_name):
-    """Check if a company/position already exists in the tracker."""
-    if not os.path.exists(excel_path):
-        return False  # no log file yet → definitely not applied
-
-    wb = load_workbook(excel_path)
-    if sheet_name not in wb.sheetnames:
-        return False  # sheet doesn’t exist yet
-
-    ws = wb[sheet_name]
-    for row in ws.iter_rows(min_row=2, values_only=True):  # skip header
-        if not row: 
-            continue
-        existing_company, existing_position, *_ = row
-        applied_date_raw = row[2] if len(row) > 2 else None
-        applied_date = _parse_tracker_date(applied_date_raw)
-        if applied_date and datetime.now() - applied_date > timedelta(days=62):
-            continue
-        if (existing_company and existing_company.strip().lower() == company_name.strip().lower() and
-            existing_position and existing_position.strip().lower() == position_name.strip().lower()):
-            return True
-    return False
-
-def log_application_to_excel(excel_path, sheet_name, company_name, position_name, applied_date):
+def log_application_to_excel(excel_path, sheet_name, company_name, position_name, applied_date, job_description=None):
     if os.path.exists(excel_path):
         wb = load_workbook(excel_path)
         if sheet_name in wb.sheetnames:
             ws = wb[sheet_name]
         else:
             ws = wb.create_sheet(sheet_name)
-            ws.append(["Company", "Position", "Applied Date"])
+            ws.append(["Company", "Position", "Applied Date", "Job Description"])
     else:
         wb = Workbook()
         ws = wb.active
         ws.title = sheet_name
-        ws.append(["Company", "Position", "Applied Date"])
+        ws.append(["Company", "Position", "Applied Date", "Job Description"])
 
     # Append
-    ws.append([company_name, position_name, applied_date])
+    ws.append([company_name, position_name, applied_date, job_description or ""])
     print(f"➡️ Logging row: {company_name}, {position_name}, {applied_date}")  # debug
 
     wb.save(excel_path)
@@ -83,11 +203,6 @@ def replace_placeholders_in_docx(input_path, output_path, replacements: dict):
 
 
 def create_application_folder(company_name, position_name, position_type, resume_path, coverLetter_path, jd_source_path=None):
-    # Check if already applied
-    if already_applied(excel_log_path, "Job Tracker", company_name, position_name):
-        print(f"⚠️ WARNING: You have already applied to '{position_name}' at '{company_name}'. Skipping...")
-        return False
-    
     """
     Create an application folder for a company/position, copy resume & cover letter,
     copy job description file, and optionally customize resume with LLM.
@@ -162,6 +277,14 @@ def create_application_folder(company_name, position_name, position_type, resume
             additional_info
         )
         resume_target = customized_resume_path
+        
+        # Export resume as PDF
+        print("📄 Exporting resume to PDF...")
+        try:
+            convert_docx_to_pdf(customized_resume_path)
+        except Exception as e:
+            print(f"⚠️ PDF export failed (non-critical): {e}")
+            print("   Resume DOCX file is still available for manual PDF export.")
 
     # Step 4: Generate cover letter
     replace_placeholders_in_docx(coverLetter_path, cover_target, replacements)
@@ -174,7 +297,8 @@ def create_application_folder(company_name, position_name, position_type, resume
         sheet_name="Job Tracker",
         company_name=company_name,
         position_name=position_name,
-        applied_date=today_str
+        applied_date=today_str,
+        job_description=job_description,
     )
     print(f"📝 Logged application to {excel_log_path}")
     
@@ -244,6 +368,14 @@ if __name__ == "__main__":
 
     folder_created = create_application_folder(company, position, position_type, resume, coverLetter, jd_source_path)
 
+    # Reconstruct the cover letter path
+    parent_folder = os.path.dirname(resume)
+    grandparent_folder = os.path.dirname(parent_folder)
+    company_folder = os.path.join(grandparent_folder, company)
+    position_folder = os.path.join(company_folder, position)
+    cover_filename = f"Roger Xu_{company}_CoverLetter_Template.docx"
+    cover_target = os.path.join(position_folder, cover_filename)
+
     # If not easy apply, run coverletter customizer
     if easy_apply == "false" and folder_created:
         print("🔄 Running coverletter customizer...")
@@ -252,5 +384,28 @@ if __name__ == "__main__":
         try:
             subprocess.run(f"python3 \"{coverletter_script}\"", shell=True, check=True)
             print("✅ Cover letter customized successfully")
+            
+            # Export cover letter as PDF (after customization)
+            # The coverletter_customizer.py saves the customized cover letter,
+            # which replaces "_Template.docx" with ".docx"
+            print("📄 Exporting cover letter to PDF...")
+            try:
+                customized_cover_path = cover_target.replace("_Template.docx", ".docx")
+                if os.path.exists(customized_cover_path):
+                    convert_docx_to_pdf(customized_cover_path)
+                else:
+                    # Fallback to template version if customized version doesn't exist
+                    convert_docx_to_pdf(cover_target)
+            except Exception as e:
+                print(f"⚠️ PDF export failed (non-critical): {e}")
+                print("   Cover letter DOCX file is still available for manual PDF export.")
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to customize cover letter: {e}")
+    elif folder_created:
+        # Export cover letter as PDF even if not customized (for easy_apply cases)
+        print("📄 Exporting cover letter to PDF...")
+        try:
+            convert_docx_to_pdf(cover_target)
+        except Exception as e:
+            print(f"⚠️ PDF export failed (non-critical): {e}")
+            print("   Cover letter DOCX file is still available for manual PDF export.")

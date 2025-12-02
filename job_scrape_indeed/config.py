@@ -33,6 +33,8 @@ class Config:
     BLACKLIST_COMPANIES = [
         "Adecco",
         "Randstad",
+        "Affirm",
+        "Dawn InfoTek"
     ]
 
     TITLE_KEYWORDS_BLACKLIST = [

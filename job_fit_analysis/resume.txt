@@ -35,11 +35,6 @@ Created serverless APIs with AWS Lambda and API Gateway for resume parsing, job 
 Automated deployments of Lambda functions using GitHub Actions and Docker, reducing release cycles from 25 mins → 5 mins and supporting weekly production pushes.
 Enhanced reliability with 80%+ test coverage in Jest and real-time monitoring via CloudWatch and Datadog for Lambda performance and DynamoDB metrics.
 
-MyRepoReader – Go CLI for Repository Snapshots | Go, Git, Markdown, CLI Tools, Open Source 	Aug 2025
-Developed a cross-platform CLI tool in Go to generate Markdown snapshots of repositories with nested .gitignore support and binary-safe handling.
-Implemented Git-tracked, text-only file and line counts, enabling accurate summaries and reproducible project context for LLMs and documentation.
-Released the project as open source on GitHub with versioned tagging, installation instructions, and portable usage across developer workflows.
-
 Education	
 Diploma in Computer Programming	Apr 2025
 Seneca Polytechnic	Toronto, ON

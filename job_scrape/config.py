@@ -31,6 +31,9 @@ class Config:
         'Data Engineer',  
         'Data Science',
         'Machine Learning',
+        'AI Engineer',
+        'Intern',
+        'co-op',
     ]
     # Blacklist companies
     BLACKLIST_COMPANIES = [
@@ -38,7 +41,8 @@ class Config:
         'wanderlog',
         'Lumenalta',
         'Dawn InfoTeck',
-        'J&M Group'
+        'J&M Group',
+        'Capgemini'
     ]
     # Location filters
     LOCATIONS = [

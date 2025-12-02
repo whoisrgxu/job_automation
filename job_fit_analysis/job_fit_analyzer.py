@@ -7,14 +7,27 @@ Analyzes job matches against a resume and filters for good matches (score >= 70)
 import json
 import os
 import sys
-from typing import List, Dict, Any
+from pathlib import Path
+from typing import Any, Dict, List
+
 import google.generativeai as genai
 from dotenv import load_dotenv
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from job_fit_analysis.applied_tracker import AppliedTracker, DEFAULT_TRACKER_PATH, DEFAULT_SHEET_NAME
 
 # Load environment variables
 load_dotenv()
 
 class JobFitAnalyzer:
+
+    def process_title_or_company_name(self, name):
+        """Replace invalid characters in title/company name"""
+        return name.replace("/", "_")
+
     def __init__(self, api_key: str = None):
         """Initialize the Job Fit Analyzer with Gemini API key"""
         if api_key is None:
@@ -26,6 +39,9 @@ class JobFitAnalyzer:
         # Configure Gemini
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.0-flash')
+        tracker_path = os.getenv("JOB_TRACKER_PATH", str(DEFAULT_TRACKER_PATH))
+        tracker_sheet = os.getenv("JOB_TRACKER_SHEET", DEFAULT_SHEET_NAME)
+        self.applied_tracker = AppliedTracker(tracker_path, tracker_sheet)
         
     def load_resume(self, resume_path: str) -> str:
         """Load resume text from file"""
@@ -196,6 +212,26 @@ Job Description:
         
         print(f"Saved {len(output_data)} good matches to {output_path}")
 
+    def filter_already_applied(self, matches: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Remove matches that have already been applied to recently."""
+        if not matches:
+            return matches
+
+        filtered: List[Dict[str, Any]] = []
+        for match in matches:
+            job = match.get("job", {})
+            company = job.get("company", "")
+            title = job.get("title", "")
+            description = job.get("description", "")
+            processed_company = self.process_title_or_company_name(company)
+            processed_title = self.process_title_or_company_name(title)
+            if self.applied_tracker.is_applied(processed_company, processed_title, job_description=description):
+                print(f"⏩ Skipping already applied job: {title} at {company}")
+                continue
+
+            filtered.append(match)
+        return filtered
+
 
 def main():
     """Main function to run the job fit analysis"""
@@ -224,11 +260,12 @@ def main():
         # Filter good matches
         print("\nFiltering good matches (score >= 70)...")
         good_matches = analyzer.filter_good_matches(results, min_score=71)
+        filtered_matches = analyzer.filter_already_applied(good_matches)
         
         # Save results
-        if good_matches:
-            analyzer.save_good_matches(good_matches, output_path)
-            print(f"\n✅ Found {len(good_matches)} jobs with good match scores (>= 71)")
+        if filtered_matches:
+            analyzer.save_good_matches(filtered_matches, output_path)
+            print(f"\n✅ Found {len(filtered_matches)} jobs with good match scores (>= 71) that you haven't applied to yet")
         else:
             print("\n❌ No jobs found with match scores >= 71")
             # Still save empty results
@@ -243,6 +280,7 @@ def main():
         print(f"Successful analyses: {len([r for r in results if r['status'] == 'success'])}")
         print(f"Failed analyses: {len([r for r in results if r['status'] == 'error'])}")
         print(f"Good matches (score >= 70): {len(good_matches)}")
+        print(f"After removing already-applied jobs: {len(filtered_matches)}")
         
         if good_matches:
             print("\nGood matches:")

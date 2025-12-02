@@ -52,7 +52,34 @@ SECTION_RULES = {
 }
 
 # ---------- LLM HELPER ----------
-def improve_resume_json(section_texts: dict, job_description: str, additional_info: str = None) -> dict:
+import time
+from typing import Dict, Optional
+
+from openai import APIError, RateLimitError
+
+MAX_LLM_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "4"))
+BACKOFF_BASE_SECONDS = float(os.getenv("LLM_BACKOFF_BASE", "1.5"))
+
+
+def _call_llm_with_retries(prompt: str) -> Optional[str]:
+    for attempt in range(MAX_LLM_RETRIES + 1):
+        try:
+            client = Model("OPENAI", prompt)
+            response = client.get_response_from_client()
+            return response
+        except (RateLimitError, APIError) as exc:
+            if attempt == MAX_LLM_RETRIES:
+                print(f"⚠️ LLM call failed after {MAX_LLM_RETRIES + 1} attempts: {exc}")
+                return None
+            sleep_seconds = BACKOFF_BASE_SECONDS * (2 ** attempt)
+            print(f"⚠️ LLM call failed (attempt {attempt + 1}/{MAX_LLM_RETRIES + 1}): {exc}. Retrying in {sleep_seconds:.1f}s...")
+            time.sleep(sleep_seconds)
+        except Exception as exc:
+            print(f"⚠️ Unexpected LLM error: {exc}")
+            return None
+
+
+def improve_resume_json(section_texts: Dict[str, str], job_description: str, additional_info: Optional[str] = None) -> Dict[str, str]:
     """Ask LLM to improve all resume sections in one JSON response."""
     # Build the big prompt
     sections_str = "\n\n".join(
@@ -102,10 +129,12 @@ def improve_resume_json(section_texts: dict, job_description: str, additional_in
     "JOBPILOT": "..."
     }}
     """
-    llm = Model("OPENAI", prompt)
-    text = llm.get_response_from_client()
+    response = _call_llm_with_retries(prompt)
+    if not response:
+        print("⚠️ Falling back to original sections due to LLM failure.")
+        return section_texts
     try:
-        return json.loads(text)
+        return json.loads(response)
     except json.JSONDecodeError:
         print("⚠️ Model did not return valid JSON, raw output saved for debugging")
         return {}
