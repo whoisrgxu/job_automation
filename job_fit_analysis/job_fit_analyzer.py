@@ -157,14 +157,16 @@ Job Description:
                 'error': str(e)
             }
     
-    def analyze_all_jobs(self, resume_path: str, jobs_path: str) -> List[Dict[str, Any]]:
-        """Analyze all jobs and return results"""
-        # Load resume and jobs
+    def analyze_all_jobs(self, resume_path: str, resume_support_path: str, jobs_path: str) -> List[Dict[str, Any]]:
+        """Analyze all jobs with two-stage scoring: first with resume.txt, then with resume_support.txt if needed"""
+        # Load resumes and jobs
         resume_text = self.load_resume(resume_path)
+        resume_support_text = self.load_resume(resume_support_path)
         jobs = self.load_jobs(jobs_path)
         
         print(f"Loaded {len(jobs)} jobs to analyze...")
-        print(f"Resume loaded from: {resume_path}")
+        print(f"Primary resume loaded from: {resume_path}")
+        print(f"Support resume loaded from: {resume_support_path}")
         print("-" * 50)
         
         results = []
@@ -175,36 +177,69 @@ Job Description:
             import time
             time.sleep(5)
             
+            # First scoring with resume.txt
             result = self.analyze_job_fit(resume_text, job)
-            results.append(result)
             
-            # Print the match score for this job
-            if result['status'] == 'success':
-                print(f"Match Score: {result['matchScore']}/100")
+            # If score is not good enough (< 71), try scoring with resume_support.txt
+            if result['status'] == 'success' and result['matchScore'] < 71:
+                print(f"First score ({result['matchScore']}/100) below threshold, trying support resume...")
+                time.sleep(5)  # Add delay before second analysis
+                
+                support_result = self.analyze_job_fit(resume_support_text, job)
+                
+                # If support resume score >= 70, use it and mark as "support"
+                if support_result['status'] == 'success' and support_result['matchScore'] >= 70:
+                    support_result['job_category'] = 'support'
+                    results.append(support_result)
+                    print(f"Support Match Score: {support_result['matchScore']}/100 (category: support)")
+                else:
+                    # Support resume also didn't meet threshold, use original result
+                    result['job_category'] = None  # Not saved, category is None
+                    results.append(result)
+                    print(f"Support Match Score: {support_result.get('matchScore', 0)}/100 (below threshold)")
             else:
-                print(f"Error: {result.get('error', 'Unknown error')}")
+                # First score was good enough (>= 71) or error occurred
+                if result['status'] == 'success' and result['matchScore'] >= 71:
+                    result['job_category'] = 'sde'
+                else:
+                    result['job_category'] = None  # Error or below threshold
+                results.append(result)
+                
+                # Print the match score for this job
+                if result['status'] == 'success':
+                    category = result.get('job_category', 'none')
+                    print(f"Match Score: {result['matchScore']}/100 (category: {category})")
+                else:
+                    print(f"Error: {result.get('error', 'Unknown error')}")
+            
             print("-" * 30)
         
         return results
     
     def filter_good_matches(self, results: List[Dict[str, Any]], min_score: int = 71) -> List[Dict[str, Any]]:
-        """Filter jobs with match score >= min_score"""
+        """Filter jobs with match score >= min_score and a job_category assigned"""
         good_matches = []
         for result in results:
-            if result['status'] == 'success' and result['matchScore'] >= min_score:
-                good_matches.append(result)
+            # Include jobs that have a job_category (either "sde" or "support")
+            if result['status'] == 'success' and result.get('job_category') is not None:
+                # For "sde" category, require score >= 71; for "support", require score >= 70
+                category = result.get('job_category')
+                score = result['matchScore']
+                if (category == 'sde' and score >= 71) or (category == 'support' and score >= 70):
+                    good_matches.append(result)
         
         return good_matches
     
     def save_good_matches(self, good_matches: List[Dict[str, Any]], output_path: str = "good_score_jobs.json"):
         """Save good matches to JSON file"""
-        # Prepare data for output (include original job data plus analysis)
+        # Prepare data for output (include original job data plus analysis and job_category)
         output_data = []
         for match in good_matches:
             output_data.append({
                 'job': match['job'],
                 'matchScore': match['matchScore'],
-                'analysis': match['analysis']
+                'analysis': match['analysis'],
+                'job_category': match.get('job_category', 'unknown')
             })
         
         with open(output_path, 'w', encoding='utf-8') as file:
@@ -241,6 +276,7 @@ def main():
         
         # File paths
         resume_path = "./resume.txt"
+        resume_support_path = "./resume_support.txt"
         jobs_path = "./linkedin_jobs.json"
         output_path = "./good_score_jobs.json"
         
@@ -249,25 +285,33 @@ def main():
             print(f"Error: Resume file not found: {resume_path}")
             sys.exit(1)
         
+        if not os.path.exists(resume_support_path):
+            print(f"Error: Support resume file not found: {resume_support_path}")
+            sys.exit(1)
+        
         if not os.path.exists(jobs_path):
             print(f"Error: Jobs file not found: {jobs_path}")
             sys.exit(1)
         
         # Analyze all jobs
         print("Starting job fit analysis...")
-        results = analyzer.analyze_all_jobs(resume_path, jobs_path)
+        results = analyzer.analyze_all_jobs(resume_path, resume_support_path, jobs_path)
         
         # Filter good matches
-        print("\nFiltering good matches (score >= 70)...")
+        print("\nFiltering good matches...")
         good_matches = analyzer.filter_good_matches(results, min_score=71)
         filtered_matches = analyzer.filter_already_applied(good_matches)
         
         # Save results
         if filtered_matches:
             analyzer.save_good_matches(filtered_matches, output_path)
-            print(f"\n✅ Found {len(filtered_matches)} jobs with good match scores (>= 71) that you haven't applied to yet")
+            sde_count = len([m for m in filtered_matches if m.get('job_category') == 'sde'])
+            support_count = len([m for m in filtered_matches if m.get('job_category') == 'support'])
+            print(f"\n✅ Found {len(filtered_matches)} jobs with good match scores that you haven't applied to yet")
+            print(f"   - SDE category: {sde_count} jobs")
+            print(f"   - Support category: {support_count} jobs")
         else:
-            print("\n❌ No jobs found with match scores >= 71")
+            print("\n❌ No jobs found with good match scores")
             # Still save empty results
             with open(output_path, 'w', encoding='utf-8') as file:
                 json.dump([], file, indent=2)
@@ -279,7 +323,12 @@ def main():
         print(f"Total jobs analyzed: {len(results)}")
         print(f"Successful analyses: {len([r for r in results if r['status'] == 'success'])}")
         print(f"Failed analyses: {len([r for r in results if r['status'] == 'error'])}")
-        print(f"Good matches (score >= 70): {len(good_matches)}")
+        
+        sde_matches = [r for r in good_matches if r.get('job_category') == 'sde']
+        support_matches = [r for r in good_matches if r.get('job_category') == 'support']
+        print(f"Good matches (SDE, score >= 71): {len(sde_matches)}")
+        print(f"Good matches (Support, score >= 70): {len(support_matches)}")
+        print(f"Total good matches: {len(good_matches)}")
         print(f"After removing already-applied jobs: {len(filtered_matches)}")
         
         if good_matches:
@@ -287,7 +336,8 @@ def main():
             for match in good_matches:
                 job = match['job']
                 score = match['matchScore']
-                print(f"  • {job['title']} at {job['company']} - Score: {score}")
+                category = match.get('job_category', 'unknown')
+                print(f"  • {job['title']} at {job['company']} - Score: {score} (category: {category})")
         
     except Exception as e:
         print(f"Error: {e}")
