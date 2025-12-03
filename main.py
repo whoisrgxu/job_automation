@@ -149,7 +149,7 @@ DESCRIPTION:
         """Replace invalid characters in title/company name"""
         return name.replace("/", "_")
         
-    def run_test_script(self, job_index, total_jobs, company, title, easy_apply):
+    def run_test_script(self, job_index, total_jobs, company, title, easy_apply, job_category="sde"):
         """Run the test.py script"""
         self.log("=" * 60)
         self.log(f"STEP 4: Running test.py (Job {job_index + 1}/{total_jobs})")
@@ -166,7 +166,7 @@ DESCRIPTION:
         title = self.process_title_or_company_name(title)
         easy_apply = "true" if easy_apply else "false"
         
-        command = f"\"{self.root_python}\" test.py \"{company}\" \"{title}\" \"fullstack\" \"{easy_apply}\""
+        command = f"\"{self.root_python}\" test.py \"{company}\" \"{title}\" \"{easy_apply}\" \"{job_category}\""
         self.run_subprocess(
             command, 
             cwd=str(test_path.parent),
@@ -195,14 +195,15 @@ DESCRIPTION:
             company = job_data['job'].get('company', 'Unknown')
             title = job_data['job'].get('title', 'Unknown')
             easy_apply = job_data['job'].get('easy_apply', False)
+            job_category = job_data.get('job_category', 'sde')  # Get job_category from job_data
             
-            self.log(f"Processing: {title} at {company}")
+            self.log(f"Processing: {title} at {company} (category: {job_category})")
             
             # Step 1: Write job description
             self.write_job_description(job_data)
             
             # Step 2: Run test.py
-            self.run_test_script(i, len(jobs), company, title, easy_apply)
+            self.run_test_script(i, len(jobs), company, title, easy_apply, job_category)
             
             self.log(f"✅ Completed processing job {i + 1}/{len(jobs)}")
             

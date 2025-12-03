@@ -202,11 +202,17 @@ def replace_placeholders_in_docx(input_path, output_path, replacements: dict):
     doc.save(output_path)
 
 
-def create_application_folder(company_name, position_name, position_type, resume_path, coverLetter_path, jd_source_path=None):
+def create_application_folder(company_name, position_name, resume_path, coverLetter_path, jd_source_path=None, job_category="sde"):
     """
     Create an application folder for a company/position, copy resume & cover letter,
     copy job description file, and optionally customize resume with LLM.
+    
+    Args:
+        job_category: "sde" or "support" - determines position_type and sections to use
     """
+    # Derive position_type from job_category
+    position_type = "fullstack" if job_category == "sde" else "support"
+    
     parent_folder = os.path.dirname(resume_path)
     grandparent_folder = os.path.dirname(parent_folder)
 
@@ -254,16 +260,21 @@ def create_application_folder(company_name, position_name, position_type, resume
             print("ℹ️ Loaded additional_info.txt")
 
     # Step 3: Customize resume
-    # position type folder name such as Frontend_Sections or Frontend_Sections
+    # position type folder name derived from job_category
     position_type_folder_name = position_type.capitalize() + "_Sections"
     if job_description:
+        
+        # Build section_files - exclude JOBPILOT and PORTFOLIO_TRACKER for support jobs
         section_files = {
             "SUMMARY": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/summary.txt",
             "HOOPP_EXPERIENCE": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/hoopp_experience.txt",
-            "PORTFOLIO_TRACKER": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/portfolio_tracker.txt",
             "SKILLS": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/skills.txt",
-            "JOBPILOT": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/jobpilot.txt",
         }
+        
+        # Add JOBPILOT and PORTFOLIO_TRACKER only for SDE jobs
+        if job_category == "sde":
+            section_files["PORTFOLIO_TRACKER"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/portfolio_tracker.txt"
+            section_files["JOBPILOT"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/jobpilot.txt"
 
         customized_resume_path = os.path.join(
             position_folder,
@@ -274,6 +285,7 @@ def create_application_folder(company_name, position_name, position_type, resume
             section_files,
             job_description,
             customized_resume_path,
+            job_category,
             additional_info
         )
         resume_target = customized_resume_path
@@ -330,14 +342,15 @@ def create_application_folder(company_name, position_name, position_type, resume
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 4:
-        print("Usage: python script.py <CompanyName> <PositionName> <Type>")
+    if len(sys.argv) < 3:
+        print("Usage: python script.py <CompanyName> <PositionName> [easy_apply] [job_category]")
         sys.exit(1)
 
     # Resume templates
     resume_default = "/Users/Roger/Documents/FullTime-Resume/Rong Gang Xu_Resume_v3.docx"
     resume_frontend = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Frontend_Resume_Placeholder.docx"
     resume_fullstack = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Fullstack_Resume_Placeholder.docx"
+    resume_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Support_Resume_Placeholder.docx"  # Using fullstack template for support (or create a support-specific one)
     resume_sharepoint = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_SharePoint_Resume.docx"
     coverLetter = "/Users/Roger/Documents/FullTime-Resume/Roger Xu_coverletter.docx"
 
@@ -346,27 +359,32 @@ if __name__ == "__main__":
     # CLI args
     company = sys.argv[1].strip()
     position = sys.argv[2].strip()
-    position_type = sys.argv[3]
     
     # easy_apply default is true
-    if len(sys.argv) < 5:
+    if len(sys.argv) < 4:
         easy_apply = "true"
     else:
-        easy_apply = sys.argv[4].strip().lower()
-
-    if position_type == "default":
-        resume = resume_default
-    elif position_type == "frontend":
-        resume = resume_frontend
-    elif position_type == "fullstack":
-        resume = resume_fullstack
-    elif position_type == "sharepoint":
-        resume = resume_sharepoint
+        easy_apply = sys.argv[3].strip().lower()
+    
+    # job_category default is "sde"
+    if len(sys.argv) < 5:
+        job_category = "sde"
     else:
-        print("Invalid position type. Use 'default', 'frontend', 'fullstack', or 'sharepoint'.")
-        sys.exit(1)
+        job_category = sys.argv[4].strip().lower()
 
-    folder_created = create_application_folder(company, position, position_type, resume, coverLetter, jd_source_path)
+    # Derive position_type from job_category
+    position_type = "fullstack" if job_category == "sde" else "support"
+    
+    # Select resume template based on position_type
+    if position_type == "fullstack":
+        resume = resume_fullstack
+    elif position_type == "support":
+        resume = resume_support
+    else:
+        # Fallback to fullstack
+        resume = resume_fullstack
+
+    folder_created = create_application_folder(company, position, resume, coverLetter, jd_source_path, job_category)
 
     # Reconstruct the cover letter path
     parent_folder = os.path.dirname(resume)

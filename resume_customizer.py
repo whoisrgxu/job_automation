@@ -7,49 +7,11 @@ import re
 from docx.oxml import OxmlElement
 from LLMClients.clients import Model
 from job_description_cleaner.jd_cleaning import clean_job_description
+from resume_prompts import SECTION_STYLES, build_prompt, get_sections_for_category
 # ---------- CONFIG ----------
 # load_dotenv()
 # client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # MODEL = "gpt-5-mini"   # or "gpt-5-mini"
-
-# ---------- STYLE MAPPING ----------
-# These names must match the style names in your Word template!
-SECTION_STYLES = {
-    "SUMMARY": "SummaryStyle",
-    "SKILLS": "SkillStyle",
-    "HOOPP_EXPERIENCE": "BulletStyle",
-    "PORTFOLIO_TRACKER": "BulletStyle",
-    "JOBPILOT": "BulletStyle",
-}
-
-# ---------- UNIQUE RULES ----------
-SECTION_RULES = {
-    "SUMMARY": """
-    - Keep short (2–3 sentences).
-    - Highlight only most relevant 3-4 technologies and 2-3 soft skills.
-    - Professional profile tone.
-    """,
-    "SKILLS": """
-    - Present as a **category:** skill1, skill2 format, and no more than 5 categories.
-    - Delete irrelevant skills.
-    - Category name has to be wrapped with "**" but do not wrap any specific skills in ** ... **.
-    """,
-    "HOOPP_EXPERIENCE": """
-    - Rewrite into no more than 6 bullet points and no more than 170 words total.
-    - You can delete irrelevant items and update or expand existing items.
-    - Ensure the bullets remain coherent with a co-op/internship context, not senior-level responsibilities.
-    - Highlight required skills from the job description, but naturally (not forced).
-    - If possible, cover at least 90 percent of important required skills not already covered by the JobPilot or Portfolio Tracker sections.
-    - Maintain professional resume tone and readability.
-    """,
-    "JOBPILOT": """
-    - No more than 5 items.
-    - No more than 4 items and no more than 105 words.
-    """,
-    "PORTFOLIO_TRACKER": """
-    - No more than 4 items and no more than 130 words.
-    """,
-}
 
 # ---------- LLM HELPER ----------
 import time
@@ -79,62 +41,22 @@ def _call_llm_with_retries(prompt: str) -> Optional[str]:
             return None
 
 
-def improve_resume_json(section_texts: Dict[str, str], job_description: str, additional_info: Optional[str] = None) -> Dict[str, str]:
+def improve_resume_json(section_texts: Dict[str, str], job_description: str, job_category: str = "sde", additional_info: Optional[str] = None) -> Dict[str, str]:
     """Ask LLM to improve all resume sections in one JSON response."""
-    # Build the big prompt
-    sections_str = "\n\n".join(
-        f"{name}:\n{content}" for name, content in section_texts.items()
-    )
-    rules_str = "\n".join(
-        f"- {name}: {rule.strip()}" for name, rule in SECTION_RULES.items()
-    )
-
-    prompt = f"""
-    You are a professional resume writer.
-    You will receive a job description and multiple resume sections.
-    Your task is to improve each section according to the general rules and its unique rules.
-
-    General Rules (apply to all sections):
-    - Keep most of the existing content and reframe if needed. Can delete irrelevant items.
-    - Emphasize alignment with the job description by highlighting overlapping skills and responsibilities.
-    - Wrap important keywords (skills, technologies, frameworks, certifications, job-critical terms) with ** ... ** so they can be processed later.
-    - You may integrate 2–4 additional skills from the job description that are not currently in the resume, but only if they fit naturally into the context of the section.
-    - Distribution of new skills is flexible:
-    * Some may appear in Experience and Projects
-    * Some may overlap across sections if appropriate
-    * It is not required to use all missing skills
-    - Slight exaggeration of existing skills is acceptable, but do not fabricate unrelated skills.
-    - Keep the tone professional, concise, and ATS-friendly.
-    - If multiple achievements/items are needed, place each on a new paragraph (double line break) without bullet symbols.
-    - Output must be strictly valid JSON, no commentary.
-
-    Unique Rules per Section:
-    {rules_str}
-
-    Job Description:
-    {job_description}
-
-    Sections:
-    {sections_str}
-
-    Additional Requirement (if any):
-    {additional_info if additional_info else 'None'}
-
-    Return JSON in this format:
-    {{
-    "SUMMARY": "...",
-    "SKILLS": "...",
-    "HOOPP_EXPERIENCE": "...",
-    "PORTFOLIO_TRACKER": "...",
-    "JOBPILOT": "..."
-    }}
-    """
+    # Build the prompt using the prompt builder based on job category
+    prompt = build_prompt(section_texts, job_description, job_category, additional_info)
+    
     response = _call_llm_with_retries(prompt)
     if not response:
         print("⚠️ Falling back to original sections due to LLM failure.")
-        return section_texts
+        # Return only the sections that should be included for this category
+        sections_to_include = get_sections_for_category(job_category)
+        return {k: v for k, v in section_texts.items() if k in sections_to_include}
     try:
-        return json.loads(response)
+        improved = json.loads(response)
+        # Ensure we only return sections that should be included for this category
+        sections_to_include = get_sections_for_category(job_category)
+        return {k: v for k, v in improved.items() if k in sections_to_include}
     except json.JSONDecodeError:
         print("⚠️ Model did not return valid JSON, raw output saved for debugging")
         return {}
@@ -158,10 +80,11 @@ def insert_paragraph_after(paragraph, style=None):
     paragraph._element.addnext(new_para._element)  # insert directly after
     return new_para
 
-def customize_resume_with_placeholders(template_path: str, section_files: dict, job_description: str, output_path: str, additional_info: str = None):
+def customize_resume_with_placeholders(template_path: str, section_files: dict, job_description: str, output_path: str, job_category: str = "sde", additional_info: str = None):
     """
     Replace placeholders in resume template with LLM-customized content.
     section_files = {"SUMMARY": "path/to/summary.txt", ...}
+    job_category: "sde" or "support" - determines which sections and prompts to use
     """
     doc = Document(template_path)
 
@@ -177,8 +100,8 @@ def customize_resume_with_placeholders(template_path: str, section_files: dict, 
     # Clean job description
     cleaned_job_description = clean_job_description(job_description)
 
-    # Get improved sections from LLM
-    improved_sections = improve_resume_json(section_texts, cleaned_job_description, additional_info)
+    # Get improved sections from LLM (filtered by job category)
+    improved_sections = improve_resume_json(section_texts, cleaned_job_description, job_category, additional_info)
     # print the text of each section for debugging
     for section, text in improved_sections.items():
         print(f"--- {section} ---\n{text}\n")   
