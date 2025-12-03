@@ -343,10 +343,45 @@ class LinkedInJobScraper:
                         self.jobs_data.extend(jobs)
                         await self.helpers.human_like_delay(5, 10)
 
+                # Deduplicate within scraped jobs first
+                self.jobs_data = self._deduplicate_current_session()
+                
                 await self.save_results()
 
             finally:
                 await context.close()
+
+    def _deduplicate_current_session(self) -> List[Dict]:
+        """Deduplicate jobs within the current scraping session by job_id"""
+        seen = set()
+        unique_jobs = []
+        for job in self.jobs_data:
+            if job["job_id"] not in seen:
+                seen.add(job["job_id"])
+                unique_jobs.append(job)
+        print(f"🔄 Deduplicated: {len(self.jobs_data)} -> {len(unique_jobs)} jobs (removed {len(self.jobs_data) - len(unique_jobs)} duplicates)")
+        return unique_jobs
+
+    def _get_yesterday_file_path(self) -> Optional[str]:
+        """Get the path to yesterday's batch file if it exists"""
+        yesterday = datetime.now() - timedelta(days=1)
+        yesterday_date_str = yesterday.strftime('%Y%m%d')
+        
+        linkedin_jobs_dir = 'linkedin_jobs'
+        if not os.path.exists(linkedin_jobs_dir):
+            return None
+        
+        # Find all files from yesterday
+        yesterday_files = [
+            f for f in os.listdir(linkedin_jobs_dir)
+            if f.endswith('.json') and f.startswith(f'linkedin_jobs_batch_{yesterday_date_str}')
+        ]
+        
+        if yesterday_files:
+            # Return the most recent file from yesterday (if multiple exist)
+            yesterday_files.sort(reverse=True)
+            return os.path.join(linkedin_jobs_dir, yesterday_files[0])
+        return None
 
     async def login(self, page: Page):
         try:
@@ -364,19 +399,33 @@ class LinkedInJobScraper:
         if not self.jobs_data:
             print("No jobs found to save.")
             return
-        seen, unique_jobs = set(), []
-        # load seen with all the job_ids in the linkedin_jobs folder
-        for file in os.listdir('linkedin_jobs'):
-            if file.endswith('.json'):
-                with open(f'linkedin_jobs/{file}', 'r', encoding='utf-8') as f:
-                    jobs = json.load(f)
-                    for job in jobs:
+        
+        seen = set()
+        unique_jobs = []
+        
+        # Check against yesterday's file if it exists
+        yesterday_file = self._get_yesterday_file_path()
+        if yesterday_file:
+            print(f"📂 Checking against yesterday's file: {yesterday_file}")
+            try:
+                with open(yesterday_file, 'r', encoding='utf-8') as f:
+                    yesterday_jobs = json.load(f)
+                    for job in yesterday_jobs:
                         seen.add(job["job_id"])
+                print(f"   Found {len(seen)} job IDs from yesterday's file")
+            except Exception as e:
+                print(f"⚠️ Error reading yesterday's file: {e}")
+        else:
+            print("📂 No file from yesterday found, skipping duplicate check")
+        
+        # Filter out jobs that already exist in yesterday's file
         for job in self.jobs_data:
             if job["job_id"] not in seen:
                 seen.add(job["job_id"])
                 unique_jobs.append(job)
-        print(f"\n💾 Saving {len(unique_jobs)} jobs")
+        
+        print(f"\n💾 Saving {len(unique_jobs)} unique jobs (filtered {len(self.jobs_data) - len(unique_jobs)} duplicates from yesterday)")
+        
         if self.config.OUTPUT_FORMAT.lower() == "csv":
             pd.DataFrame(unique_jobs).to_csv(self.config.OUTPUT_FILE, index=False)
         else:
