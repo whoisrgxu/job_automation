@@ -234,8 +234,9 @@ Job Description:
         """Save good matches to JSON file"""
         # Prepare data for output (include original job data plus analysis and job_category)
         output_data = []
-        for match in good_matches:
+        for idx, match in enumerate(good_matches, 1):
             output_data.append({
+                'id': idx,
                 'job': match['job'],
                 'matchScore': match['matchScore'],
                 'analysis': match['analysis'],
