@@ -53,7 +53,6 @@ SUPPORT_SECTION_RULES = {
     - Present as a **category:** skill1, skill2 format, and no more than 5 categories.
     - Delete irrelevant skills.
     - Category name has to be wrapped with "**" but do not wrap any specific skills in ** ... **.
-    - Emphasize support-related skills (troubleshooting, incident management, customer service, etc.).
     """,
     "HOOPP_EXPERIENCE": """
     - Rewrite into no more than 6 bullet points and no more than 170 words total.
@@ -95,7 +94,7 @@ SUPPORT_GENERAL_RULES = """
 - Slight exaggeration of existing skills is acceptable, but do not fabricate unrelated skills.
 - Keep the tone professional, concise, and ATS-friendly, emphasizing problem-solving and customer-focused approach.
 - If multiple achievements/items are needed, place each on a new paragraph (double line break) without bullet symbols.
-- Focus on quantifiable support metrics when possible (incidents resolved, uptime improvements, response times, etc.).
+- Have some quantifiable support metrics when possible (incidents resolved, uptime improvements, response times, etc.).
 - Output must be strictly valid JSON, no commentary.
 """
 
