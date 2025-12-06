@@ -13,7 +13,7 @@ Development Practice: Agile / Scrum, SDLC
 Experience	
 Software Engineer | Systems Developer (Co-op)	Sep 2024 – Apr 2025
 Healthcare of Ontario Pension Plan	Toronto, ON
-Implemented a customizable question feature with React, TypeScript, and Node.js, boosting user engagement by 20% across 1,000+ employees.
+Implemented a customizable question feature with React, TypeScript, SPFx and Node.js, boosting user engagement by 20% across 1,000+ employees.
 Rebuilt a core UI with React, Tailwind, and Material UI, cutting load time by 35% (2.3s → 1.5s) and improving mobile LightHouse score.
 Developed backend features with Node.js/TypeScript on AWS using Lambda, API Gateway, and DynamoDB to process events, improving latency and reliability.
 Repaired and optimized Azure DevOps CI/CD pipelines, added lint and test stages, and cut deployment time by 30%(10 mins → 7 mins).

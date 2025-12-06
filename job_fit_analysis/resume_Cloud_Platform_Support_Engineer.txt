@@ -1,0 +1,42 @@
+ROGER XU
+Toronto, Ontario, M5C 0A6 | roxu1927@outlook.com | (647) 893-9678
+Summary	  
+Cloud / Platform Support Engineer with hands-on experience troubleshooting AWS serverless systems, CI/CD pipelines, cloud environments, and distributed applications. Skilled in analyzing CloudWatch logs, IAM issues, API Gateway/Lambda failures, SQS retry behavior, and environment configuration mismatches. Strong foundation in Azure DevOps pipelines and cross-team collaboration to stabilize production workloads.
+Skills	  
+Cloud Support: AWS Lambda, API Gateway, DynamoDB, SQS/SNS, CloudWatch metrics/logs/alarms, IAM roles/policies, serverless deployments, event-driven troubleshooting
+CI/CD & DevOps: Azure DevOps pipelines, GitHub Actions, Docker builds, release pipelines, environment config management
+Backend & Scripting: Node.js, Python, TypeScript, Bash, REST APIs, configuration debugging, JSON/YAML
+Monitoring & Observability: CloudWatch Insights, X-Ray traces, Datadog, log correlation, performance root-cause discovery
+Infrastructure & Operations: Serverless optimization, throttling/timeouts, retry logic, permissions debugging, artifact/version management
+Experience	
+Systems Developer (Co-op)	Sep 2024 – Apr 2025
+- Healthcare of Ontario Pension Plan	Toronto, ON
+- Diagnosed Lambda/API Gateway failures using CloudWatch logs, metrics, and X-Ray traces.
+- Resolved IAM permission issues by analyzing role assumptions, policies, and resource access patterns.
+- Optimized serverless functions, reducing cold starts and improving execution reliability.
+- Investigated DynamoDB query/configuration issues and performance degradation.
+- Maintained CI/CD pipelines (Azure DevOps, GitHub Actions), fixing deployment failures caused by config discrepancies.
+- Supported event-driven workloads using SQS and automated replay of failed events.
+- Contributed to incident response, RCA documentation, and post-incident improvements.
+- Collaborated with platform and cloud teams to stabilize production workloads.
+Property Manager	May 2015 – May 2023
+Self-Employed	Toronto, ON
+Logged, prioritized, and resolved maintenance requests; coordinated across tenants, contractors, and third-party services.
+Communicated updates clearly with non-technical stakeholders and documented job details in tracking systems.
+Customer Service Representative	Nov 2013 – May 2015
+TD Canada Trust	Richmond Hill, ON
+Resolved customer issues and escalated digital/technical banking problems to internal support teams with clear case notes.
+Guided customers through online banking tools and troubleshooting login/transaction issues.
+Consistently ranked among the top CSRs for needs-based product recommendations.
+Investment Banking Analyst	July 2011 – May 2013
+J.P. Morgan First Capital Securities	Beijing, China
+Analyzed large datasets, validated financial information, and prepared reports under tight deadlines.
+Coordinated across compliance/legal teams to ensure accuracy of regulatory documents.
+Education	
+Diploma in Computer Programming	Apr 2025
+Seneca Polytechnic	Toronto, ON
+GPA 4.0/4.0, President’s Honour List
+Master of Commerce and Master of Professional Accounting 	Feb 2011
+University of Sydney 	 Sydney, Australia 
+Bachelor of Economics 	June 2008
+Renmin (People’s) University of China  	 Beijing, China 

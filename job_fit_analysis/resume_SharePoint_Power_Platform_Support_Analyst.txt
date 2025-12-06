@@ -1,0 +1,40 @@
+ROGER XU
+Toronto, Ontario, M5C 0A6 | roxu1927@outlook.com | (647) 893-9678
+Summary	  
+SharePoint / Power Platform Support Analyst with hands-on experience supporting SharePoint Online, PowerApps, Power Automate workflows, and SPFx components at HOOPP. Skilled in permissions troubleshooting, web part debugging, connector failures, Graph API integrations, and workflow error resolution. Strong ability to collaborate with business users, BAs, and development teams to maintain reliable M365 applications.
+Skills	  
+SharePoint Support: SharePoint Online site permissions, lists/libraries, site structure, content types, SPFx troubleshooting, page/web-part debugging
+Power Platform: PowerApps (form logic, data cards, connectors), Power Automate (flow errors, run history, approvals), Dataverse fundamentals
+Microsoft 365 Administration: User access, roles, permissions, groups, M365 settings, environment-level troubleshooting
+Scripting & API: JavaScript/TypeScript, SPFx, Microsoft Graph API, REST endpoints, JSON payload debugging
+Communication & Collaboration: Working with BAs/Dev/Ops, documenting issues, user training, RCA and change management
+Experience	
+Systems Developer (Co-op)	Sep 2024 – Apr 2025
+- Supported SharePoint Online by troubleshooting permissions, list/library issues, and broken pages/components.
+- Debugged SPFx web parts by analyzing console logs, API calls, and environment configuration differences.
+- Resolved PowerApps failures by reviewing logic, connectors, and data sources; fixed delegation warnings and form errors.
+- Investigated Power Automate flow failures via run history, error codes, and Graph API calls.
+- Automated SharePoint updates via Azure Runbooks and Graph API, saving ~30 staff hours/month.
+- Collaborated with enterprise teams to refine data models, governance rules, and content management workflows.
+- Documented KB articles and provided user-facing guidance for common SPO/PowerApps tasks.
+Property Manager	May 2015 – May 2023
+Self-Employed	Toronto, ON
+Logged, prioritized, and resolved maintenance requests; coordinated across tenants, contractors, and third-party services.
+Communicated updates clearly with non-technical stakeholders and documented job details in tracking systems.
+Customer Service Representative	Nov 2013 – May 2015
+TD Canada Trust	Richmond Hill, ON
+Resolved customer issues and escalated digital/technical banking problems to internal support teams with clear case notes.
+Guided customers through online banking tools and troubleshooting login/transaction issues.
+Consistently ranked among the top CSRs for needs-based product recommendations.
+Investment Banking Analyst	July 2011 – May 2013
+J.P. Morgan First Capital Securities	Beijing, China
+Analyzed large datasets, validated financial information, and prepared reports under tight deadlines.
+Coordinated across compliance/legal teams to ensure accuracy of regulatory documents.
+Education	
+Diploma in Computer Programming	Apr 2025
+Seneca Polytechnic	Toronto, ON
+GPA 4.0/4.0, President’s Honour List
+Master of Commerce and Master of Professional Accounting 	Feb 2011
+University of Sydney 	 Sydney, Australia 
+Bachelor of Economics 	June 2008
+Renmin (People’s) University of China  	 Beijing, China 

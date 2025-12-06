@@ -1,0 +1,42 @@
+ROGER XU
+Toronto, Ontario, M5C 0A6 | roxu1927@outlook.com | (647) 893-9678
+Summary	  
+Application Support Analyst with hands-on experience supporting internal enterprise applications at HOOPP. Skilled in incident triage, log analysis, SQL investigation, API debugging, and collaborating with BA/Dev/Ops teams to restore service quickly. Strong understanding of financial workflows from prior banking and investment experience. Adept at documenting RCA and maintaining SLA-driven production environments.
+Skills	  
+Application Support: Incident triage, SLA handling, RCA, log analysis (CloudWatch, Datadog, App Insights), API debugging (JSON, HTTP errors), ticketing (ServiceNow, Jira, Azure Boards), KB documentation, change/ITIL processes
+Languages & Scripting: JavaScript/TypeScript, SQL, Python, Bash, PowerShell
+Backend & Databases: Node.js, Express, REST APIs, SQL Server, PostgreSQL, MongoDB, DynamoDB, scheduled jobs, config/environment troubleshooting
+Cloud & DevOps: AWS (Lambda, API Gateway, SQS, CloudWatch), Azure DevOps (pipelines & releases), Git/GitHub, Docker, Terraform (foundational)
+Monitoring & Communication: Datadog dashboards, App Insights, distributed logs/traces, cross-team communication with BA/Dev/Ops, supporting financial workflows
+Experience	
+Systems Developer (Co-op)	Sep 2024 – Apr 2025
+Healthcare of Ontario Pension Plan	Toronto, ON
+- Provided day-to-day support for internal applications by triaging issues, analyzing logs, writing SQL queries, and delivering fixes or workarounds.
+- Investigated API failures by reviewing JSON payloads, HTTP codes, and backend logs to identify failing services and configuration issues.
+- Participated in incident response with BA/Dev/Ops teams; contributed to RCA and documented corrective actions.
+- Refactored React/Node.js components and optimized AWS Lambda functions to stabilize services.
+- Automated recurring operational tasks using scripts (Python/TypeScript), reducing manual workload.
+- Troubleshot Azure DevOps pipelines and deployment failures across multiple environments.
+- Monitored application health using Datadog/App Insights and raised alerts for performance degradation.
+- Updated KB articles and delivered clear instructions to business users and junior team members.
+Property Manager	May 2015 – May 2023
+Self-Employed	Toronto, ON
+Logged, prioritized, and resolved maintenance requests; coordinated across tenants, contractors, and third-party services.
+Communicated updates clearly with non-technical stakeholders and documented job details in tracking systems.
+Customer Service Representative	Nov 2013 – May 2015
+TD Canada Trust	Richmond Hill, ON
+Resolved customer issues and escalated digital/technical banking problems to internal support teams with clear case notes.
+Guided customers through online banking tools and troubleshooting login/transaction issues.
+Consistently ranked among the top CSRs for needs-based product recommendations.
+Investment Banking Analyst	July 2011 – May 2013
+J.P. Morgan First Capital Securities	Beijing, China
+Analyzed large datasets, validated financial information, and prepared reports under tight deadlines.
+Coordinated across compliance/legal teams to ensure accuracy of regulatory documents.
+Education	
+Diploma in Computer Programming	Apr 2025
+Seneca Polytechnic	Toronto, ON
+GPA 4.0/4.0, President’s Honour List
+Master of Commerce and Master of Professional Accounting 	Feb 2011
+University of Sydney 	 Sydney, Australia 
+Bachelor of Economics 	June 2008
+Renmin (People’s) University of China  	 Beijing, China 
