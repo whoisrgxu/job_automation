@@ -14,12 +14,24 @@ class Config:
     
     # Search parameters with keywords and pages needed
     KEYWORDS = {
-        'application support analyst not senior': 2,
-        'application support specialist not senior': 2,
-        'systems support analyst not senior': 2,
-        'application analyst not senior': 2,
-        'production support analyst not senior': 2,
-        'technical support engineer not senior': 2,
+        'developer not senior': 2,
+        'Node.js developer not senior': 2,
+        'typescript developer not senior': 2,
+        'JavaScript developer not senior': 2,
+        'react developer not senior': 2,
+        'software engineer not senior': 2,
+        'next.js developer not senior': 2,
+        'AWS developer not senior': 1,
+        'engineer in test': 1,
+        'application support analyst not senior': 1,
+        'application support specialist not senior': 1,
+        'systems support analyst not senior': 1,
+        'application analyst not senior': 1,
+        'production support analyst not senior': 1,
+        'technical support engineer not senior': 1,
+        'Technology Operations Analyst': 1,
+        'Platform Support Analyst': 1,
+        'Incident Management Analyst': 1,
     }
 
     # title keywords blacklist
@@ -38,7 +50,8 @@ class Config:
         'Lumenalta',
         'Dawn InfoTeck',
         'J&M Group',
-        'Capgemini'
+        'Capgemini',
+        'BitGo'
     ]
     # Location filters
     LOCATIONS = [

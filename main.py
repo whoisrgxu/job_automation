@@ -149,7 +149,7 @@ DESCRIPTION:
         """Replace invalid characters in title/company name"""
         return name.replace("/", "_")
         
-    def run_test_script(self, job_index, total_jobs, company, title, easy_apply, job_category="sde"):
+    def run_test_script(self, job_index, total_jobs, company, title, easy_apply, location, job_category="sde"):
         """Run the test.py script"""
         self.log("=" * 60)
         self.log(f"STEP 4: Running test.py (Job {job_index + 1}/{total_jobs})")
@@ -166,7 +166,7 @@ DESCRIPTION:
         title = self.process_title_or_company_name(title)
         easy_apply = "true" if easy_apply else "false"
         
-        command = f"\"{self.root_python}\" test.py \"{company}\" \"{title}\" \"{easy_apply}\" \"{job_category}\""
+        command = f"\"{self.root_python}\" test.py \"{company}\" \"{title}\" \"{easy_apply}\" \"{location}\" \"{job_category}\""
         self.run_subprocess(
             command, 
             cwd=str(test_path.parent),
@@ -196,14 +196,14 @@ DESCRIPTION:
             title = job_data['job'].get('title', 'Unknown')
             easy_apply = job_data['job'].get('easy_apply', False)
             job_category = job_data.get('job_category', 'sde')  # Get job_category from job_data
-            
+            location = job_data['job'].get('location', '')
             self.log(f"Processing: {title} at {company} (category: {job_category})")
             
             # Step 1: Write job description
             self.write_job_description(job_data)
             
             # Step 2: Run test.py
-            self.run_test_script(i, len(jobs), company, title, easy_apply, job_category)
+            self.run_test_script(i, len(jobs), company, title, easy_apply, location, job_category)
             
             self.log(f"✅ Completed processing job {i + 1}/{len(jobs)}")
             
@@ -217,13 +217,13 @@ DESCRIPTION:
             self.log("=" * 80)
 
             # # Step 1: Run job scraper
-            # self.run_scraper()
+            self.run_scraper()
 
             # Step 2: Run job fit analyzer
             self.run_analyzer()
 
             # # Step 3: Process all good jobs
-            # await self.process_all_jobs()
+            await self.process_all_jobs()
 
             self.log("=" * 80)
             self.log("🎉 Job Automation Workflow Completed Successfully!")

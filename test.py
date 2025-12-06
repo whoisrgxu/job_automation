@@ -26,27 +26,25 @@ def convert_docx_to_pdf(docx_path: str) -> str:
         if not docx_path_obj.exists():
             print(f"⚠️ DOCX file not found: {docx_path}")
             return None
-        
+
         # Output PDF path (same folder, same name, .pdf extension)
         pdf_path = docx_path_obj.with_suffix('.pdf')
         output_dir = docx_path_obj.parent
         docx_abs_path = str(docx_path_obj.resolve())
-        pdf_filename = pdf_path.name
-        
-        # Method 1: Try WPS Office (user's preferred office suite) via AppleScript
+
+        # Method 1: Try WPS Office via AppleScript
         wps_app_paths = [
             "/Applications/WPS Office.app",
             "/Applications/Kingsoft Office.app",
         ]
-        
+
         wps_found = False
         for wps_app in wps_app_paths:
             if Path(wps_app).exists():
                 wps_found = True
                 print(f"📝 Attempting PDF conversion with WPS Office...")
+
                 try:
-                    # AppleScript to automate WPS Office to export to PDF
-                    # Note: WPS Office menu structure may vary - this is a simplified approach
                     applescript = f'''
                     tell application "WPS Office"
                         activate
@@ -56,12 +54,8 @@ def convert_docx_to_pdf(docx_path: str) -> str:
                     tell application "System Events"
                         tell process "WPS Office"
                             try
-                                -- Try keyboard shortcut for export/save as PDF (Cmd+Shift+E or Cmd+P then export)
-                                -- First, try Save As dialog approach
                                 keystroke "s" using {{command down, shift down}}
                                 delay 2
-                                -- In Save As dialog, set format to PDF if possible
-                                -- This is a simplified approach - actual menu may differ
                                 keystroke return
                                 delay 2
                             on error errMsg
@@ -74,95 +68,87 @@ def convert_docx_to_pdf(docx_path: str) -> str:
                         quit
                     end tell
                     '''
-                    
+
                     result = subprocess.run(
                         ["osascript", "-e", applescript],
                         capture_output=True,
                         text=True,
                         timeout=30
                     )
-                    
-                    # Check if PDF was created (might have a different name if Save As was used)
-                    # Look for any PDF file with similar name in the output directory
+
+                    # If expected PDF exists
                     if pdf_path.exists():
                         print(f"✅ PDF exported using WPS Office: {pdf_path}")
                         return str(pdf_path)
-                    
-                    # Also check if any PDF was created in the directory
+
+                    # Otherwise, try to find most recent PDF and rename
                     pdf_files = list(output_dir.glob("*.pdf"))
                     if pdf_files:
-                        # Find the most recent PDF that might match
                         recent_pdf = max(pdf_files, key=lambda p: p.stat().st_mtime)
-                        if recent_pdf.stat().st_mtime > docx_path_obj.stat().st_mtime:
-                            print(f"⚠️ WPS Office created PDF but with different name: {recent_pdf}")
-                            # Rename to expected name
-                            recent_pdf.rename(pdf_path)
-                            print(f"✅ PDF exported using WPS Office: {pdf_path}")
-                            return str(pdf_path)
-                    
+                        print(f"⚠️ WPS Office created PDF but with different name: {recent_pdf}")
+                        recent_pdf.rename(pdf_path)
+                        print(f"✅ Renamed to: {pdf_path}")
+                        return str(pdf_path)
+
                     print(f"⚠️ WPS Office automation attempted but PDF not created")
                     if result.stderr:
-                        print(f"   Error: {result.stderr}")
+                        print(f"   Error: {result.stderr.strip()[:200]}")
                 except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
                     print(f"⚠️ WPS Office conversion failed: {e}")
                 break
-        
-        # Method 2: Try LibreOffice (most reliable command-line method)
-        if not wps_found or not pdf_path.exists():
+
+        # Method 2: Try LibreOffice (command line)
+        if not pdf_path.exists():
             libreoffice_paths = [
-            "/Applications/LibreOffice.app/Contents/MacOS/soffice",
-            "/usr/local/bin/soffice",
-            "/opt/homebrew/bin/soffice",
-            shutil.which("soffice"),
-        ]
-        
-        libreoffice_cmd = None
-        for path in libreoffice_paths:
-            if path and Path(path).exists():
-                libreoffice_cmd = path
-                break
-        
-        if libreoffice_cmd:
-            print(f"📝 Attempting PDF conversion with LibreOffice...")
-            try:
-                # LibreOffice command to convert to PDF
-                cmd = [
-                    libreoffice_cmd,
-                    "--headless",
-                    "--convert-to", "pdf",
-                    "--outdir", str(output_dir),
-                    str(docx_path_obj)
-                ]
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=60
-                )
-                
-                if result.returncode == 0 and pdf_path.exists():
-                    print(f"✅ PDF exported using LibreOffice: {pdf_path}")
-                    return str(pdf_path)
-                elif result.stderr:
-                    print(f"⚠️ LibreOffice conversion failed: {result.stderr[:200]}")
-            except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
-                print(f"⚠️ LibreOffice conversion failed: {e}")
-        
-        # All methods failed - log warning but don't fail the script
+                "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+                "/usr/local/bin/soffice",
+                "/opt/homebrew/bin/soffice",
+                shutil.which("soffice"),
+            ]
+
+            libreoffice_cmd = None
+            for path in libreoffice_paths:
+                if path and Path(path).exists():
+                    libreoffice_cmd = path
+                    break
+
+            if libreoffice_cmd:
+                print(f"📝 Attempting PDF conversion with LibreOffice...")
+                try:
+                    cmd = [
+                        libreoffice_cmd,
+                        "--headless",
+                        "--convert-to", "pdf",
+                        "--outdir", str(output_dir),
+                        str(docx_path_obj)
+                    ]
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=60
+                    )
+
+                    if result.returncode == 0 and pdf_path.exists():
+                        print(f"✅ PDF exported using LibreOffice: {pdf_path}")
+                        return str(pdf_path)
+                    elif result.stderr:
+                        print(f"⚠️ LibreOffice conversion failed: {result.stderr[:200]}")
+                except (subprocess.TimeoutExpired, FileNotFoundError, Exception) as e:
+                    print(f"⚠️ LibreOffice conversion failed: {e}")
+
+        # All methods failed - non-critical
         if not pdf_path.exists():
             if wps_found:
-                print(f"⚠️ PDF conversion unsuccessful. WPS Office automation needs improvement.")
-                print(f"💡 The DOCX files are available for manual PDF export.")
-                print(f"   Or install LibreOffice for reliable command-line PDF conversion: brew install --cask libreoffice")
+                print(f"⚠️ PDF conversion unsuccessful. WPS automation needs improvement.")
+                print(f"💡 DOCX is available for manual PDF export.")
             else:
                 print(f"⚠️ PDF conversion skipped: No compatible office suite found.")
-                print(f"💡 Tip: Install LibreOffice for reliable command-line PDF conversion: brew install --cask libreoffice")
-        
-        # Return None gracefully - this is not a critical error
+                print(f"💡 Tip: Install LibreOffice: brew install --cask libreoffice")
+
         return None
-    
+
     except Exception as e:
-        # Catch ANY unexpected exception to prevent script from crashing
         print(f"⚠️ Unexpected error in PDF conversion (non-critical): {e}")
         print(f"   DOCX file is still available: {docx_path}")
         return None
@@ -182,10 +168,8 @@ def log_application_to_excel(excel_path, sheet_name, company_name, position_name
         ws.title = sheet_name
         ws.append(["Company", "Position", "Applied Date", "Job Description"])
 
-    # Append
     ws.append([company_name, position_name, applied_date, job_description or ""])
-    print(f"➡️ Logging row: {company_name}, {position_name}, {applied_date}")  # debug
-
+    print(f"➡️ Logging row: {company_name}, {position_name}, {applied_date}")
     wb.save(excel_path)
     print(f"💾 Saved to {excel_path}")
 
@@ -202,17 +186,33 @@ def replace_placeholders_in_docx(input_path, output_path, replacements: dict):
     doc.save(output_path)
 
 
-def create_application_folder(company_name, position_name, resume_path, coverLetter_path, jd_source_path=None, job_category="sde"):
+def create_application_folder(
+    company_name,
+    position_name,
+    resume_path,
+    coverLetter_path,
+    location,
+    jd_source_path=None,
+    job_category="sde",
+    position_type=None,
+):
     """
     Create an application folder for a company/position, copy resume & cover letter,
     copy job description file, and optionally customize resume with LLM.
-    
+
     Args:
-        job_category: "sde" or "support" - determines position_type and sections to use
+        job_category: "sde" or "support" - determines sections to use
+        position_type: "fullstack" or "support" – overrides job_category if provided
     """
-    # Derive position_type from job_category
-    position_type = "fullstack" if job_category == "sde" else "support"
-    
+    # --- DEBUG ---
+    print(f"[DEBUG create_application_folder] job_category={job_category!r}, position_type(before)={position_type!r}")
+
+    # Derive position_type from job_category if not explicitly given
+    if position_type is None:
+        position_type = "fullstack" if job_category == "sde" else "support"
+
+    print(f"[DEBUG create_application_folder] position_type(final)={position_type!r}")
+
     parent_folder = os.path.dirname(resume_path)
     grandparent_folder = os.path.dirname(parent_folder)
 
@@ -238,7 +238,8 @@ def create_application_folder(company_name, position_name, resume_path, coverLet
     replacements = {
         "{{COMPANY_NAME}}": company_name,
         "{{POSITION_NAME}}": position_name,
-        "{{TODAY_DATE}}": today_str
+        "{{TODAY_DATE}}": today_str,
+        "LOCATION_STRING": location
     }
 
     # Step 1: Copy resume template
@@ -260,26 +261,27 @@ def create_application_folder(company_name, position_name, resume_path, coverLet
             print("ℹ️ Loaded additional_info.txt")
 
     # Step 3: Customize resume
-    # position type folder name derived from job_category
     position_type_folder_name = position_type.capitalize() + "_Sections"
-    if job_description:
-        
-        # Build section_files - exclude JOBPILOT and PORTFOLIO_TRACKER for support jobs
-        section_files = {
-            "SUMMARY": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/summary.txt",
-            "HOOPP_EXPERIENCE": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/hoopp_experience.txt",
-            "SKILLS": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/skills.txt",
-        }
-        
-        # Add JOBPILOT and PORTFOLIO_TRACKER only for SDE jobs
-        if job_category == "sde":
-            section_files["PORTFOLIO_TRACKER"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/portfolio_tracker.txt"
-            section_files["JOBPILOT"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/jobpilot.txt"
+    print(f"[DEBUG] Section folder: {position_type_folder_name}")
 
+    # Build section_files
+    section_files = {
+        "SUMMARY": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/summary.txt",
+        "HOOPP_EXPERIENCE": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/hoopp_experience.txt",
+        "SKILLS": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/skills.txt",
+    }
+
+    # Add JOBPILOT and PORTFOLIO_TRACKER only for SDE jobs
+    if job_category == "sde":
+        section_files["PORTFOLIO_TRACKER"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/portfolio_tracker.txt"
+        section_files["JOBPILOT"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/jobpilot.txt"
+
+    if job_description:
         customized_resume_path = os.path.join(
             position_folder,
             f"Roger Xu_{company_name}_Resume.docx"
         )
+        print("📄 Customizing resume with LLM...")
         customize_resume_with_placeholders(
             resume_path,
             section_files,
@@ -289,7 +291,7 @@ def create_application_folder(company_name, position_name, resume_path, coverLet
             additional_info
         )
         resume_target = customized_resume_path
-        
+
         # Export resume as PDF
         print("📄 Exporting resume to PDF...")
         try:
@@ -298,12 +300,13 @@ def create_application_folder(company_name, position_name, resume_path, coverLet
             print(f"⚠️ PDF export failed (non-critical): {e}")
             print("   Resume DOCX file is still available for manual PDF export.")
 
-    # Step 4: Generate cover letter
+    # Step 4: Generate cover letter (template with placeholders)
     replace_placeholders_in_docx(coverLetter_path, cover_target, replacements)
 
     print(f"✅ Application folder created: {position_folder}")
-    print(f"📄 Files created:\n- {resume_target}\n- {cover_target}\n- {jd_target}")
+    print(f"📄 Files created so far:\n- {resume_target}\n- {cover_target}\n- {jd_target if job_description else 'No JD copied (JD file missing)'}")
 
+    # Step 4.5: Log to Excel
     log_application_to_excel(
         excel_log_path,
         sheet_name="Job Tracker",
@@ -313,23 +316,21 @@ def create_application_folder(company_name, position_name, resume_path, coverLet
         job_description=job_description,
     )
     print(f"📝 Logged application to {excel_log_path}")
-    
+
     # Step 5: Clear only the source job_description.txt and additional_info.txt
     try:
-        # Clear the original JD file (template folder)
         if jd_source_path and os.path.exists(jd_source_path):
             open(jd_source_path, "w").close()
             print("🧹 Cleared source job_description.txt content")
 
-        # Clear additional_info.txt if present in source folder
-        addl_source_path = os.path.join(os.path.dirname(jd_source_path), "additional_info.txt")
-        if os.path.exists(addl_source_path):
+        addl_source_path = os.path.join(os.path.dirname(jd_source_path), "additional_info.txt") if jd_source_path else None
+        if addl_source_path and os.path.exists(addl_source_path):
             open(addl_source_path, "w").close()
             print("🧹 Cleared source additional_info.txt content")
     except Exception as e:
         print(f"⚠️ Failed to clear source job description/additional_info: {e}")
 
-    # --- NEW: record cover letter absolute path ---
+    # Step 6: Record cover letter absolute path
     try:
         record_cover_path = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/cover_letter_path.txt"
         with open(record_cover_path, "w") as f:
@@ -343,14 +344,14 @@ def create_application_folder(company_name, position_name, resume_path, coverLet
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python script.py <CompanyName> <PositionName> [easy_apply] [job_category]")
+        print("Usage: python script.py <CompanyName> <PositionName> [easy_apply] [location] [job_category]")
         sys.exit(1)
 
     # Resume templates
     resume_default = "/Users/Roger/Documents/FullTime-Resume/Rong Gang Xu_Resume_v3.docx"
     resume_frontend = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Frontend_Resume_Placeholder.docx"
     resume_fullstack = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Fullstack_Resume_Placeholder.docx"
-    resume_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Support_Resume_Placeholder.docx"  # Using fullstack template for support (or create a support-specific one)
+    resume_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Support_Resume_Placeholder.docx"  # Using support-specific template
     resume_sharepoint = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_SharePoint_Resume.docx"
     coverLetter = "/Users/Roger/Documents/FullTime-Resume/Roger Xu_coverletter.docx"
 
@@ -359,34 +360,48 @@ if __name__ == "__main__":
     # CLI args
     company = sys.argv[1].strip()
     position = sys.argv[2].strip()
-    
-    # easy_apply default is true
-    if len(sys.argv) < 4:
-        easy_apply = "true"
-    else:
-        easy_apply = sys.argv[3].strip().lower()
-    
-    # job_category default is "sde"
-    if len(sys.argv) < 5:
-        job_category = "sde"
-    else:
-        job_category = sys.argv[4].strip().lower()
+
+    # Optional args with safe defaults
+    easy_apply = sys.argv[3].strip().lower() if len(sys.argv) > 3 else "true"
+    location = sys.argv[4].strip() if len(sys.argv) > 4 else "Toronto, ON"
+    job_category = sys.argv[5].strip().lower() if len(sys.argv) > 5 else "sde"
+
+    print("======== DEBUG ARGS ========")
+    print("sys.argv:", sys.argv)
+    print("company:", company)
+    print("position:", position)
+    print("easy_apply:", easy_apply)
+    print("location:", location)
+    print("job_category:", job_category)
+    print("============================")
 
     # Derive position_type from job_category
     position_type = "fullstack" if job_category == "sde" else "support"
-    
+    print(f"[DEBUG main] position_type={position_type!r}")
+
     # Select resume template based on position_type
     if position_type == "fullstack":
         resume = resume_fullstack
     elif position_type == "support":
         resume = resume_support
     else:
-        # Fallback to fullstack
-        resume = resume_fullstack
+        resume = resume_fullstack  # fallback
 
-    folder_created = create_application_folder(company, position, resume, coverLetter, jd_source_path, job_category)
+    print(f"[DEBUG main] Using resume template: {resume!r}")
 
-    # Reconstruct the cover letter path
+    # Create folder & base files
+    folder_created = create_application_folder(
+        company,
+        position,
+        resume,
+        coverLetter,
+        location,
+        jd_source_path,
+        job_category=job_category,
+        position_type=position_type,
+    )
+
+    # Reconstruct the cover letter path (same logic as inside create_application_folder)
     parent_folder = os.path.dirname(resume)
     grandparent_folder = os.path.dirname(parent_folder)
     company_folder = os.path.join(grandparent_folder, company)
@@ -397,22 +412,19 @@ if __name__ == "__main__":
     # If not easy apply, run coverletter customizer
     if easy_apply == "false" and folder_created:
         print("🔄 Running coverletter customizer...")
-        import subprocess
         coverletter_script = "/Users/Roger/Documents/PersonalProject/Job Automation/coverletter_customizer.py"
         try:
             subprocess.run(f"python3 \"{coverletter_script}\"", shell=True, check=True)
             print("✅ Cover letter customized successfully")
-            
+
             # Export cover letter as PDF (after customization)
-            # The coverletter_customizer.py saves the customized cover letter,
-            # which replaces "_Template.docx" with ".docx"
             print("📄 Exporting cover letter to PDF...")
             try:
+                # coverletter_customizer.py should produce non-template file
                 customized_cover_path = cover_target.replace("_Template.docx", ".docx")
                 if os.path.exists(customized_cover_path):
                     convert_docx_to_pdf(customized_cover_path)
                 else:
-                    # Fallback to template version if customized version doesn't exist
                     convert_docx_to_pdf(cover_target)
             except Exception as e:
                 print(f"⚠️ PDF export failed (non-critical): {e}")
@@ -420,8 +432,8 @@ if __name__ == "__main__":
         except subprocess.CalledProcessError as e:
             print(f"❌ Failed to customize cover letter: {e}")
     elif folder_created:
-        # Export cover letter as PDF even if not customized (for easy_apply cases)
-        print("📄 Exporting cover letter to PDF...")
+        # Easy apply: still export cover letter as PDF (template-based)
+        print("📄 Exporting cover letter to PDF (easy apply)...")
         try:
             convert_docx_to_pdf(cover_target)
         except Exception as e:
