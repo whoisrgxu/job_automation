@@ -177,6 +177,9 @@ class LinkedInJobScraper:
                         )
                         description = await desc_el.inner_text() if desc_el else ""
 
+                        #if job description has phrase such as 5(5 or any number greater than 5)+ years of experience(or yoe / YOE), will skip
+                        if self.helpers.requires_5_or_more_years(description):
+                            continue
                         # Check if description has French words
                         if self.helpers.has_french_words(description):
                             print(f"⏩ Skipping job: {title.strip()} - French job description")

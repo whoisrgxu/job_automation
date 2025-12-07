@@ -13,8 +13,10 @@ if __name__ == "__main__":
     # Resume templates
     resume_default = "/Users/Roger/Documents/FullTime-Resume/Rong Gang Xu_Resume_v3.docx"
     resume_frontend = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Frontend_Resume_Placeholder.docx"
-    resume_fullstack = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Fullstack_Resume_Placeholder.docx"
-    resume_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Support_Resume_Placeholder.docx"  # Using support-specific template
+    resume_sde = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Fullstack_Resume_Placeholder.docx"
+    resume_application_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Application_Support_Resume_Placeholder.docx"
+    resume_cloud_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Cloud_Support_Resume_Placeholder.docx"
+    resume_sharepoint_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_SharePoint_Support_Resume_Placeholder.docx" 
     resume_sharepoint = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_SharePoint_Resume.docx"
     coverLetter = "/Users/Roger/Documents/FullTime-Resume/Roger Xu_coverletter.docx"
 
@@ -38,17 +40,15 @@ if __name__ == "__main__":
     print("job_category:", job_category)
     print("============================")
 
-    # Derive position_type from job_category
-    position_type = "fullstack" if job_category == "sde" else "support"
-    print(f"[DEBUG main] position_type={position_type!r}")
-
     # Select resume template based on position_type
-    if position_type == "fullstack":
-        resume = resume_fullstack
-    elif position_type == "support":
-        resume = resume_support
+    if job_category == "sde":
+        resume = resume_sde
+    elif job_category == "application_support":
+        resume = resume_cloud_support
+    elif job_category == "cloud_support":
+        resume = resume_cloud_support
     else:
-        resume = resume_fullstack  # fallback
+        resume = resume_sharepoint_support  # fallback
 
     print(f"[DEBUG main] Using resume template: {resume!r}")
 
@@ -61,7 +61,6 @@ if __name__ == "__main__":
         location,
         jd_source_path,
         job_category=job_category,
-        position_type=position_type,
     )
 
     # Reconstruct the cover letter path (same logic as inside create_application_folder)

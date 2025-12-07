@@ -217,13 +217,13 @@ DESCRIPTION:
             self.log("=" * 80)
 
             # # Step 1: Run job scraper
-            self.run_scraper()
+            # self.run_scraper()
 
             # Step 2: Run job fit analyzer
             self.run_analyzer()
 
             # # Step 3: Process all good jobs
-            await self.process_all_jobs()
+            # await self.process_all_jobs()
 
             self.log("=" * 80)
             self.log("🎉 Job Automation Workflow Completed Successfully!")

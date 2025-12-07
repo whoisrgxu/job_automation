@@ -198,7 +198,6 @@ def create_application_folder(
     location: str,
     jd_source_path: Optional[str] = None,
     job_category: str = "sde",
-    position_type: Optional[str] = None,
     excel_path: str = DEFAULT_EXCEL_LOG_PATH,
 ) -> bool:
     """
@@ -206,15 +205,8 @@ def create_application_folder(
     copy job description file, and optionally customize resume with LLM.
 
     Args:
-        job_category: "sde" or "support" - determines sections to use
-        position_type: "fullstack" or "support" – overrides job_category if provided
+        job_category: "sde" or "cloud support" or "application support" or "sharepoint support" - determines sections to use
     """
-    print(f"[DEBUG create_application_folder] job_category={job_category!r}, position_type(before)={position_type!r}")
-
-    if position_type is None:
-        position_type = "fullstack" if job_category == "sde" else "support"
-
-    print(f"[DEBUG create_application_folder] position_type(final)={position_type!r}")
 
     parent_folder = os.path.dirname(resume_path)
     grandparent_folder = os.path.dirname(parent_folder)
@@ -257,18 +249,18 @@ def create_application_folder(
                 additional_info = f.read()
             print("ℹ️ Loaded additional_info.txt")
 
-    position_type_folder_name = position_type.capitalize() + "_Sections"
-    print(f"[DEBUG] Section folder: {position_type_folder_name}")
+    job_category_folder_name = job_category.capitalize() + "_Sections"
+    print(f"[DEBUG] Section folder: {job_category_folder_name}")
 
     section_files = {
-        "SUMMARY": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/summary.txt",
-        "HOOPP_EXPERIENCE": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/hoopp_experience.txt",
-        "SKILLS": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/skills.txt",
+        "SUMMARY": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{job_category_folder_name}/summary.txt",
+        "HOOPP_EXPERIENCE": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{job_category_folder_name}/hoopp_experience.txt",
+        "SKILLS": f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{job_category_folder_name}/skills.txt",
     }
 
     if job_category == "sde":
-        section_files["PORTFOLIO_TRACKER"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/portfolio_tracker.txt"
-        section_files["JOBPILOT"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{position_type_folder_name}/jobpilot.txt"
+        section_files["PORTFOLIO_TRACKER"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{job_category_folder_name}/portfolio_tracker.txt"
+        section_files["JOBPILOT"] = f"/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/{job_category_folder_name}/jobpilot.txt"
 
     if job_description:
         customized_resume_path = os.path.join(
