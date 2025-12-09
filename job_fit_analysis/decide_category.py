@@ -15,12 +15,12 @@ def decide_category(scores: FitScores) -> Category:
     app = scores["application_support_fit"]
 
     # 1. 先按你的优先级+阈值
-    if sde >= 82:
-        return "sde"
-    if cloud >= 75:
-        return "cloud_support"
     if sp >= 70:
         return "sharepoint_support"
+    if cloud >= 75:
+        return "cloud_support"
+    if sde >= 82:
+        return "sde"
     if app >= 75:
         return "application_support"
 

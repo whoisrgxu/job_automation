@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Job Fit Analysis System using Gemini 2.5 Flash live
+Job Fit Analysis System using Gemini 2.5 Flash
 Analyzes job matches against multiple resume templates and assigns a category
 based on fit scores + thresholds.
 """
@@ -10,7 +10,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -35,24 +35,99 @@ class JobFitAnalyzer:
         """Replace invalid characters in title/company name"""
         return name.replace("/", "_")
 
-    def __init__(self, api_key: str | None = None):
-        """Initialize the Job Fit Analyzer with Gemini API key"""
-        if api_key is None:
-            api_key = os.getenv("GEMINI_API_KEY")
+    def __init__(self, api_key: Optional[str] = None, max_requests_per_key: int = 19):
+        """
+        Initialize the Job Fit Analyzer with Gemini API key rotation support.
 
-        if not api_key:
+        - Reads up to 6 keys from env:
+          GEMINI_API_KEY_1 ... GEMINI_API_KEY_6
+        - If none found, falls back to GEMINI_API_KEY (single-key mode).
+        - Rotates key automatically every `max_requests_per_key` successful calls
+          OR when a 429/quota error is hit.
+        """
+        # Collect keys from environment
+        keys: List[str] = []
+
+        # Prefer numbered keys if present
+        for i in range(1, 7):
+            k = os.getenv(f"GEMINI_API_KEY_{i}")
+            if k:
+                keys.append(k)
+
+        # If nothing found, fall back to single GEMINI_API_KEY
+        if not keys:
+            fallback = api_key or os.getenv("GEMINI_API_KEY")
+            if fallback:
+                keys.append(fallback)
+
+        if not keys:
             raise ValueError(
-                "Gemini API key not found. Please set GEMINI_API_KEY environment "
-                "variable or pass it as parameter."
+                "No Gemini API key found. Please set GEMINI_API_KEY or "
+                "GEMINI_API_KEY_1 ... GEMINI_API_KEY_6 in your environment."
             )
 
-        # Configure Gemini
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-2.5-flash")
+        self.api_keys = keys
+        self.max_requests_per_key = max_requests_per_key
+
+        # Rotation state
+        self.current_key_index = 0
+        self.current_key_request_count = 0
+
+        # Configure Gemini with first key
+        self._configure_current_key()
 
         tracker_path = os.getenv("JOB_TRACKER_PATH", str(DEFAULT_TRACKER_PATH))
         tracker_sheet = os.getenv("JOB_TRACKER_SHEET", DEFAULT_SHEET_NAME)
         self.applied_tracker = AppliedTracker(tracker_path, tracker_sheet)
+
+    # ===== API KEY ROTATION HELPERS ======================================
+
+    def _configure_current_key(self) -> None:
+        """Configure genai + model for the current key index."""
+        api_key = self.api_keys[self.current_key_index]
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel("gemini-2.5-flash")
+        self.current_key_request_count = 0
+        print(
+            f"🔑 Using Gemini key #{self.current_key_index + 1} "
+            f"(requests on this key: {self.current_key_request_count}/{self.max_requests_per_key})"
+        )
+
+    def _rotate_to_next_key(self) -> bool:
+        """
+        Rotate to the next API key.
+        Returns True if rotation succeeded, False if no more keys.
+        """
+        if self.current_key_index + 1 >= len(self.api_keys):
+            print("🚫 All Gemini API keys exhausted.")
+            return False
+
+        self.current_key_index += 1
+        print(f"🔄 Rotating to Gemini key #{self.current_key_index + 1}...")
+        self._configure_current_key()
+        return True
+
+    def _before_request(self) -> bool:
+        """
+        Called before every Gemini request.
+        - If current key hit `max_requests_per_key`, rotate.
+        - Returns False if no key is available anymore.
+        """
+        if self.current_key_request_count >= self.max_requests_per_key:
+            rotated = self._rotate_to_next_key()
+            if not rotated:
+                return False
+        return True
+
+    def _after_request_success(self) -> None:
+        """Increment request count after a successful call."""
+        self.current_key_request_count += 1
+        print(
+            f"✅ Request OK on key #{self.current_key_index + 1} "
+            f"({self.current_key_request_count}/{self.max_requests_per_key})"
+        )
+
+    # =====================================================================
 
     def load_resume(self, resume_path: str) -> str:
         """Load resume text from file"""
@@ -131,82 +206,123 @@ Here are the four resume templates (summarized profiles):
         self, resume_text_collection: Dict[str, str], job: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Analyze job fit using Gemini and return the match scores + category"""
-        try:
-            # Extract job description
-            job_description = job.get("description", "")
-            job_title = job.get("title", "Unknown")
-            company = job.get("company", "Unknown")
+        # 1) Check if we still have a usable key
+        if not self._before_request():
+            msg = "All Gemini API keys exhausted before making this request."
+            print(f"Error analyzing job: {msg}")
+            return {
+                "job": job,
+                "category": None,
+                "status": "all_keys_exhausted",
+                "error": msg,
+            }
 
-            print(f"Analyzing: {job_title} at {company}...")
+        # Extract job info
+        job_description = job.get("description", "")
+        job_title = job.get("title", "Unknown")
+        company = job.get("company", "Unknown")
 
-            # Create prompt
-            prompt = self.create_prompt(resume_text_collection, job_description)
+        print(f"Analyzing: {job_title} at {company}...")
 
-            # Get response from Gemini
-            response = self.model.generate_content(prompt)
+        # Create prompt
+        prompt = self.create_prompt(resume_text_collection, job_description)
 
-            # Parse the response
-            response_text = (response.text or "").strip()
+        # We'll try at most 2 attempts: current key, then next key if quota error
+        attempts = 0
+        last_error_msg = ""
 
-            # Remove any markdown code fences if present
-            if response_text.startswith("```json"):
-                response_text = response_text[7:]
-            if response_text.startswith("```"):
-                response_text = response_text[3:]
-            if response_text.endswith("```"):
-                response_text = response_text[:-3]
-
-            response_text = response_text.strip()
-
-            # Parse JSON response
+        while attempts < 2:
+            attempts += 1
             try:
-                fit_scores = json.loads(response_text)
+                response = self.model.generate_content(prompt)
+                response_text = (response.text or "").strip()
 
-                category = decide_category(fit_scores)
+                # Count successful request against current key
+                self._after_request_success()
 
-                if category != "skip":
+                # Remove any markdown code fences if present
+                if response_text.startswith("```json"):
+                    response_text = response_text[7:]
+                if response_text.startswith("```"):
+                    response_text = response_text[3:]
+                if response_text.endswith("```"):
+                    response_text = response_text[:-3]
+
+                response_text = response_text.strip()
+
+                # Parse JSON response
+                try:
+                    fit_scores = json.loads(response_text)
+                    category = decide_category(fit_scores)
+
+                    if category != "skip":
+                        return {
+                            "job": job,
+                            "category": category,
+                            "fit_scores": fit_scores,
+                            "status": "success",
+                        }
+
+                    # skip but still success
                     return {
                         "job": job,
-                        "category": category,
+                        "category": "skip",
                         "fit_scores": fit_scores,
                         "status": "success",
                     }
 
-                # skip 情况也带上 job 和 fit_scores，方便后续分析
-                return {
-                    "job": job,
-                    "category": "skip",
-                    "fit_scores": fit_scores,
-                    "status": "success",
-                }
+                except json.JSONDecodeError as e:
+                    print(f"Error parsing Gemini response as JSON: {e}")
+                    print(f"Raw response: {response_text}")
+                    return {
+                        "job": job,
+                        "category": None,
+                        "status": "error",
+                        "error": f"Failed to parse job fit analysis response: {e}",
+                    }
 
-            except json.JSONDecodeError as e:
-                print(f"Error parsing Gemini response as JSON: {e}")
-                print(f"Raw response: {response_text}")
-                return {
-                    "job": job,
-                    "category": None,
-                    "status": "error",
-                    "error": f"Failed to parse job fit analysis response: {e}",
-                }
+            except Exception as e:
+                msg = str(e)
+                last_error_msg = msg
+                print(f"Error analyzing job (attempt {attempts}): {msg}")
 
-        except Exception as e:
-            msg = str(e)
-            print(f"Error analyzing job: {msg}")
+                lower = msg.lower()
+                quota_error = (
+                    "429" in lower
+                    or "resource_exhausted" in lower
+                    or "quota" in lower
+                )
 
-            # Treat 429 / RESOURCE_EXHAUSTED / quota messages as quota_exceeded
-            lower = msg.lower()
-            if "429" in lower or "resource_exhausted" in lower or "quota" in lower:
-                status = "quota_exceeded"
-            else:
-                status = "error"
+                if quota_error:
+                    print("⚠️ Quota-related error detected.")
+                    # Try rotating to next key and retry once
+                    if self._rotate_to_next_key():
+                        # Loop will retry with new key
+                        continue
+                    else:
+                        # No more keys available
+                        return {
+                            "job": job,
+                            "category": None,
+                            "status": "all_keys_exhausted",
+                            "error": msg,
+                        }
+                else:
+                    # Non-quota error, no special rotation here
+                    return {
+                        "job": job,
+                        "category": None,
+                        "status": "error",
+                        "error": msg,
+                    }
 
-            return {
-                "job": job,
-                "category": None,
-                "status": status,
-                "error": msg,
-            }
+        # If we somehow exit loop without returning
+        return {
+            "job": job,
+            "category": None,
+            "status": "error",
+            "error": last_error_msg or "Unknown error",
+        }
 
     def analyze_all_jobs(
         self, resume_paths: Dict[str, str], jobs_path: str
@@ -246,15 +362,14 @@ Here are the four resume templates (summarized profiles):
         for i, job in enumerate(jobs, 1):
             print(f"[{i}/{len(jobs)}] Processing job...")
 
-            # Delay to avoid rate limits if needed
-            time.sleep(5)
+            # Small delay to be nice to rate limits
+            time.sleep(1)
 
             result = self.analyze_job_fit(resume_text_collection, job)
             status = result.get("status")
 
-            if status == "quota_exceeded":
-                print("🚫 Gemini quota exhausted. Stopping further analysis.")
-                # We break here but still return whatever results we already collected
+            if status == "all_keys_exhausted":
+                print("🚫 All Gemini keys exhausted. Stopping further analysis.")
                 break
 
             if status == "success" and result.get("category") != "skip":
@@ -318,7 +433,7 @@ Here are the four resume templates (summarized profiles):
 def main() -> None:
     """Main function to run the job fit analysis"""
     try:
-        # Initialize analyzer
+        # Initialize analyzer (keys & rotation handled inside)
         analyzer = JobFitAnalyzer()
 
         # File paths

@@ -217,10 +217,10 @@ DESCRIPTION:
             self.log("=" * 80)
 
             # # Step 1: Run job scraper
-            # self.run_scraper()
+            self.run_scraper()
 
             # Step 2: Run job fit analyzer
-            self.run_analyzer()
+            # self.run_analyzer()
 
             # # Step 3: Process all good jobs
             # await self.process_all_jobs()

@@ -4,6 +4,7 @@ import sys
 
 from application_helpers import convert_docx_to_pdf, create_application_folder
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
@@ -13,7 +14,7 @@ if __name__ == "__main__":
     # Resume templates
     resume_default = "/Users/Roger/Documents/FullTime-Resume/Rong Gang Xu_Resume_v3.docx"
     resume_frontend = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Frontend_Resume_Placeholder.docx"
-    resume_sde = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Fullstack_Resume_Placeholder.docx"
+    resume_sde = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_SDE_Resume_Placeholder.docx"
     resume_application_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Application_Support_Resume_Placeholder.docx"
     resume_cloud_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_Cloud_Support_Resume_Placeholder.docx"
     resume_sharepoint_support = "/Users/Roger/Documents/FullTime-Resume/Resume Template - One Page/Roger Xu_SharePoint_Support_Resume_Placeholder.docx" 
@@ -74,7 +75,8 @@ if __name__ == "__main__":
     # If not easy apply, run coverletter customizer
     if easy_apply == "false" and folder_created:
         print("🔄 Running coverletter customizer...")
-        coverletter_script = "/Users/Roger/Documents/PersonalProject/Job Automation/coverletter_customizer.py"
+        coverletter_script = os.path.join(BASE_DIR, "coverletter_customizer.py")
+
         try:
             subprocess.run(f"python3 \"{coverletter_script}\"", shell=True, check=True)
             print("✅ Cover letter customized successfully")

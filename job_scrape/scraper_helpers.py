@@ -95,7 +95,7 @@ class ScraperHelpers:
         except Exception:
             return False
         
-    def requires_5_or_more_years(description: str) -> bool:
+    def requires_5_or_more_years(self, description: str) -> bool:
         desc = description.lower()
 
         years = []

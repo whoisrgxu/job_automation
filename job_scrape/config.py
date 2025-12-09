@@ -51,7 +51,8 @@ class Config:
         'Dawn InfoTeck',
         'J&M Group',
         'Capgemini',
-        'BitGo'
+        'BitGo',
+        'Astra-North Infoteck Inc.'
     ]
     # Location filters
     LOCATIONS = [
